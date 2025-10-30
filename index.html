@@ -2425,11 +2425,17 @@ function startGame11_Pinball() { showGameContainer(11); }
         // 6. FUNCIONES DE PREMIO (JUEGOS)
         // ===================================================================
 
-                  
         function startRewardGame() {
     hideAllScreens();
     document.getElementById('gameScreen').classList.add('active');
     document.getElementById('rewardLevel').innerText = level;
+
+    // ⬇️ LÍNEA CRUCIAL AÑADIDA: Oculta la pancarta de felicitación
+    const rewardMessage = document.getElementById('rewardMessage');
+    if (rewardMessage) {
+        rewardMessage.style.display = 'none';
+    }
+    // ⬆️ FIN DE LA MODIFICACIÓN
     
     // Lógica para seleccionar un juego aleatorio
     const gameIndex = Math.floor(Math.random() * availableGames.length);
@@ -2437,9 +2443,11 @@ function startGame11_Pinball() { showGameContainer(11); }
 
     if (window[selectedGame.func]) {
         // Llama a la función simplificada, que a su vez llama a showGameContainer()
-        window[selectedGame.func]();
+        window[selectedGame.func](); 
     } else {
         alert(`Error: El juego '${selectedGame.name}' no está implementado.`);
+        // Si el juego no está implementado, aún necesitamos mostrar el botón
+        // de volver y ocultar los contenedores de juego si es necesario.
         endGame();
     }
 }
