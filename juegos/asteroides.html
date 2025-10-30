@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ataque de Asteroides 🚀</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: monospace;
+      color: #fff;
+      user-select: none;
+      touch-action: none;
+    }
+
+    h1 {
+      color: #ffcc00;
+      margin-bottom: 5px;
+      font-size: 1.5em;
+    }
+
+    #contenedorJuego {
+      position: relative;
+    }
+
+    canvas {
+      border: 3px solid #ffcc00;
+      background: #111;
+      display: block;
+    }
+
+    #hud {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      padding: 5px;
+      color: #00ff00;
+      pointer-events: none;
+    }
+
+    #mensajeFinal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.8);
+      border: 3px solid #ffcc00;
+      padding: 20px;
+      text-align: center;
+      display: none;
+      z-index: 100;
+    }
+
+    #mensajeFinal button {
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #dc3545; /* Rojo para reiniciar, más apropiado para un "Game Over" */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ataque de Asteroides 🚀</h1>
+
+  <div id="contenedorJuego">
+    <canvas id="juegoCanvas" width="320" height="480"></canvas>
+    <div id="hud">
+      <span>PUNTOS: <span id="scoreDisplay">0</span></span>
+      <span>VIDAS: <span id="livesDisplay">3</span></span>
+    </div>
+    <div id="mensajeFinal">
+      <h2>¡GAME OVER!</h2>
+      <p>Tu Puntuación Final: <span id="finalScore">0</span></p>
+      <button onclick="iniciarJuego()">Volver a Jugar</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("juegoCanvas");
+    const ctx = canvas.getContext("2d");
+    const ancho = canvas.width;
+    const alto = canvas.height;
+
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const mensajeFinal = document.getElementById('mensajeFinal');
+    const finalScore = document.getElementById('finalScore');
+
+    let juegoActivo = false;
+    let score = 0;
+    let vidas = 3;
+    let asteroides = [];
+    let dificultad = 1.5; // Dificultad inicial aumentada para más cantidad
+    const intervaloBase = 500; // Intervalo base para crear asteroides (más bajo = más rápido)
+    let generadorIntervalo;
+    let bucleJuegoFrame;
+    let tiempoUltimoAsteroide = 0;
+    const tiempoMinimoEntreAsteroides = 200; // Mínimo de milisegundos entre asteroides
+
+    const nave = { x: ancho / 2, y: alto - 50, radio: 15, color: '#00BFFF' };
+
+    const tiposAsteroide = [
+      { emoji: "🪨", color: "#888", puntos: 10, velocidad: 2.5 },
+      { emoji: "☄️", color: "#f80", puntos: 20, velocidad: 3.5 },
+      { emoji: "💥", color: "#f00", puntos: 30, velocidad: 4.5 },
+      { emoji: "🌑", color: "#333", puntos: 15, velocidad: 3.0 },
+      { emoji: "🔮", color: "#6f0", puntos: 25, velocidad: 4.0 }
+    ];
+
+    /**
+     * Crea un nuevo asteroide.
+     * Se usa `setTimeout` en el bucle principal en lugar de `setInterval` para
+     * un control más flexible de la cantidad.
+     */
+    function crearAsteroide() {
+      const tipo = tiposAsteroide[Math.floor(Math.random() * tiposAsteroide.length)];
+      const radio = 18;
+      const x = Math.random() * (ancho - radio * 2) + radio;
+      const y = -radio;
+
+      asteroides.push({
+        x: x,
+        y: y,
+        radio: radio,
+        velocidadX: (Math.random() - 0.5) * 1.5,
+        velocidadY: tipo.velocidad * dificultad,
+        tipo: tipo,
+      });
+    }
+
+    /**
+     * Generador continuo de asteroides.
+     * Esto permite una mayor cantidad y un ritmo más frenético.
+     */
+    function generarAsteroidesContinuo() {
+        if (!juegoActivo) return;
+        const ahora = performance.now();
+        const intervaloActual = Math.max(intervaloBase / dificultad, tiempoMinimoEntreAsteroides);
+
+        // Genera un asteroide en cada intervalo
+        if (ahora - tiempoUltimoAsteroide > intervaloActual) {
+            crearAsteroide();
+            tiempoUltimoAsteroide = ahora;
+        }
+
+        // Se usa `setTimeout` en lugar de `setInterval` para un control más preciso
+        generadorIntervalo = setTimeout(generarAsteroidesContinuo, intervaloActual * (0.8 + Math.random() * 0.4)); // Pequeña variación para que no sea un reloj
+    }
+
+
+    /**
+     * Actualiza la posición de los asteroides y revisa colisiones/salida.
+     */
+    function actualizarAsteroides() {
+      for (let i = asteroides.length - 1; i >= 0; i--) {
+        const a = asteroides[i];
+        a.x += a.velocidadX;
+        a.y += a.velocidadY;
+
+        // 1. Colisión con la Nave (¡Ahora te daña!)
+        const dxNave = a.x - nave.x;
+        const dyNave = a.y - nave.y;
+        const distanciaNave = Math.sqrt(dxNave * dxNave + dyNave * dyNave);
+        if (distanciaNave < a.radio + nave.radio) {
+          // COLISIÓN: El jugador muere (pierde una vida)
+          asteroides.splice(i, 1);
+          perderVida();
+          continue;
+        }
+
+        // 2. Asteroide sale de la pantalla (¡Ahora ganas puntos por esquivar!)
+        if (a.y > alto + a.radio) {
+          asteroides.splice(i, 1);
+          score += a.tipo.puntos; // Puntos por esquivar
+          actualizarHUD();
+          continue;
+        }
+      }
+    }
+
+    /**
+     * **¡Se eliminó la función `manejarToqueAsteroide`!**
+     * El juego ahora se trata de esquivar, no de tocar/disparar.
+     */
+
+    function actualizarHUD() {
+      scoreDisplay.textContent = score;
+      livesDisplay.textContent = vidas;
+    }
+
+    function perderVida() {
+      if (!juegoActivo) return;
+      vidas--;
+      actualizarHUD();
+      if (vidas <= 0) terminarJuego();
+    }
+
+    function terminarJuego() {
+      juegoActivo = false;
+      clearTimeout(generadorIntervalo); // Limpia el setTimeout
+      cancelAnimationFrame(bucleJuegoFrame);
+      finalScore.textContent = score;
+      mensajeFinal.style.display = 'block';
+    }
+
+    function dibujarNave() {
+      // Dibuja la nave como un triángulo (la forma actual)
+      ctx.fillStyle = nave.color;
+      ctx.beginPath();
+      ctx.moveTo(nave.x, nave.y - nave.radio);
+      ctx.lineTo(nave.x - nave.radio, nave.y + nave.radio);
+      ctx.lineTo(nave.x + nave.radio, nave.y + nave.radio);
+      ctx.closePath();
+      ctx.fill();
+
+      // Pequeño círculo para representar el radio de colisión
+      // ctx.strokeStyle = 'red';
+      // ctx.beginPath();
+      // ctx.arc(nave.x, nave.y, nave.radio, 0, Math.PI * 2);
+      // ctx.stroke();
+    }
+
+    function dibujarAsteroides() {
+      asteroides.forEach(a => {
+        ctx.font = `${a.radio * 1.5}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = a.tipo.color;
+        ctx.fillText(a.tipo.emoji, a.x, a.y);
+
+        // Pequeño círculo para representar el radio de colisión
+        // ctx.strokeStyle = 'red';
+        // ctx.beginPath();
+        // ctx.arc(a.x, a.y, a.radio, 0, Math.PI * 2);
+        // ctx.stroke();
+      });
+    }
+
+    function dibujar() {
+      if (!juegoActivo) return;
+
+      // Incrementa la dificultad lentamente con el tiempo
+      dificultad += 0.0005; // Aumenta la velocidad y la tasa de generación
+
+      ctx.clearRect(0, 0, ancho, alto);
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, ancho, alto);
+      actualizarAsteroides();
+      dibujarAsteroides();
+      dibujarNave();
+      bucleJuegoFrame = requestAnimationFrame(dibujar);
+    }
+
+    // Mueve la nave con el cursor/toque
+    function moverNaveConToque(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX || e.touches[0].clientX) - rect.left;
+      nave.x = x;
+      if (nave.x < nave.radio) nave.x = nave.radio;
+      if (nave.x > ancho - nave.radio) nave.x = ancho - nave.radio;
+    }
+
+    // Listener para el movimiento de la nave
+    canvas.addEventListener('touchmove', moverNaveConToque, { passive: false });
+    canvas.addEventListener('mousemove', moverNaveConToque);
+
+    function iniciarJuego() {
+      score = 0;
+      vidas = 3;
+      dificultad = 1.5; // Dificultad inicial
+      asteroides = [];
+      juegoActivo = true;
+      mensajeFinal.style.display = 'none';
+      actualizarHUD();
+
+      clearTimeout(generadorIntervalo);
+      tiempoUltimoAsteroide = performance.now();
+      generarAsteroidesContinuo(); // Inicia la generación continua
+
+      cancelAnimationFrame(bucleJuegoFrame);
+      dibujar();
+    }
+
+    iniciarJuego();
+  </script>
+</body>
+</html>
