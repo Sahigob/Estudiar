@@ -2091,20 +2091,15 @@
     });
 
    // 2. Mostrar el contenedor seleccionado y recargar el iframe
-const selectedGame = availableGames.find(g => g.id === gameId);
-if (selectedGame) {
-    // 🟢 NUEVA LÍNEA: Obtener el contenedor seleccionado
-    const selectedContainer = document.getElementById(selectedGame.container);
-    
-    // 🟢 VERIFICACIÓN: Asegurarse de que el elemento existe antes de usar .style
-    if (selectedContainer) {
-        selectedContainer.style.display = 'block';
-    }
-    
-    const iframe = document.getElementById(selectedGame.iframe);
-    if (iframe) {
-        // La corrección de ruta ya está aplicada aquí, ¡perfecto!
-        iframe.src = `./juegos/${selectedGame.file}`;
+    const selectedGame = availableGames.find(g => g.id === gameId);
+    if (selectedGame) {
+        document.getElementById(selectedGame.container).style.display = 'block';
+        
+        const iframe = document.getElementById(selectedGame.iframe);
+        if (iframe) {
+            // Esto recarga el iframe, asegurando que el juego se reinicia.
+            iframe.src = `./juegos/${selectedGame.file}`;
+        }
     }
 }
         
