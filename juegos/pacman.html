@@ -1,330 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pac-Man Game - Versión Final</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #000;
-            font-family: Arial, sans-serif;
-            color: white;
-            /* CRUCIAL: Evita que el navegador haga scroll al tocar */
-            touch-action: none; 
-        }
-
-        #score {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        /* 💥 AJUSTE CSS: Ocupa el 100% del ancho del viewport */
-        #gameCanvas {
-            border: 4px solid #1e40af;
-            background-color: #000;
-            width: 100vw; 
-            height: auto; 
-            max-width: 560px; 
-        }
-
-        #controls {
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        #gameOver {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 10; 
-        }
-
-        #gameOver h2 {
-            color: #FFD700;
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        #gameOver p {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        #restartBtn {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #FFD700;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #restartBtn:hover {
-            background-color: #FFC700;
-        }
-
-        .info {
-            font-size: 14px;
-            color: #999;
-            margin-top: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div id="score">Score: 0</div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="controls">
-        <p>Mueve el dedo sobre la pantalla para dirigir a Pac-Man.</p>
-        <p class="info">Usa las flechas del teclado en PC.</p>
-        <p class="info">Come todos los puntos y evita los fantasmas</p>
-    </div>
-
-    <div id="gameOver">
-        <h2 id="gameOverText">GAME OVER</h2>
-        <p id="finalScore">Score Final: 0</p>
-        <button id="restartBtn">Jugar de Nuevo</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        const GRID_WIDTH = 28;
-        const GRID_HEIGHT = 31;
-        const ASPECT_RATIO = GRID_HEIGHT / GRID_WIDTH; 
-
-        // 🚨 CRUCIAL: Se calculará dinámicamente
-        let CELL_SIZE; 
-        
-        // --- Variables TÁCTILES ---
-        let touchStartX = 0;
-        let touchStartY = 0;
-        const SWIPE_THRESHOLD = 30; 
-        // -------------------------
-
-        const MAZE = [
-            "############################",
-            "#............##............#",
-            "#.####.#####.##.#####.####.#",
-            "#o####.#####.##.#####.####o#",
-            "#.####.#####.##.#####.####.#",
-            "#..........................#",
-            "#.####.##.########.##.####.#",
-            "#.####.##.########.##.####.#",
-            "#......##....##....##......#",
-            "######.##### ## #####.######",
-            "######.##### ## #####.######",
-            "######.##          ##.######",
-            "######.## ###--### ##.######",
-            "######.## #        # ##.######",
-            "       .   #        #   .      ", // Fila del túnel
-            "######.## #        # ##.######",
-            "######.## ######## ##.######",
-            "######.##          ##.######",
-            "######.## ######## ##.######",
-            "######.## ######## ##.######",
-            "#............##............#",
-            "#.####.#####.##.#####.####.#",
-            "#.####.#####.##.#####.####.#",
-            "#o..##................##..o#",
-            "###.##.##.########.##.##.###",
-            "###.##.##.########.##.##.###",
-            "#......##....##....##......#",
-            "#.##########.##.##########.#",
-            "#.##########.##.##########.#",
-            "#..........................#",
-            "############################"
-        ];
-
-        let pacman = { x: 14, y: 23, dir: 'right', nextDir: 'right' };
-        let ghosts = [
-            { x: 12, y: 14, color: '#FF0000', dir: 'up' },
-            { x: 14, y: 14, color: '#FFB8FF', dir: 'down' },
-            { x: 15, y: 14, color: '#00FFFF', dir: 'left' },
-            { x: 16, y: 14, color: '#FFB852', dir: 'right' }
-        ];
-        let dots = [];
-        let score = 0;
-        let gameOver = false;
-        let scared = false;
-        let scaredTimer = 0;
-        let mouthOpen = true;
-        let animationFrame = 0;
-
-        // 📐 Lógica de Responsividad
-        function resizeCanvas() {
-            const displayWidth = canvas.clientWidth; 
-            canvas.width = displayWidth;
-            canvas.height = displayWidth * ASPECT_RATIO;
-            CELL_SIZE = canvas.width / GRID_WIDTH; 
-            
-            // Llama a draw() aquí para que la primera visualización sea correcta
-            if (CELL_SIZE > 0) {
-                 draw(); 
-            }
-        }
-        
-        function initDots() {
-            dots = [];
-            for (let y = 0; y < GRID_HEIGHT; y++) {
-                for (let x = 0; x < GRID_WIDTH; x++) {
-                    const cell = MAZE[y][x];
-                    if (cell === '.') dots.push({ x, y, type: 'dot' });
-                    if (cell === 'o') dots.push({ x, y, type: 'power' });
-                }
-            }
-        }
-
-        function isWall(x, y) {
-            if (y < 0 || y >= GRID_HEIGHT) return true;
-            if (x >= 0 && x < GRID_WIDTH && MAZE[y][x] === '#') return true; 
-            return false;
-        }
-
-        function canMove(x, y, dir) {
-            let newX = x, newY = y;
-            if (dir === 'up') newY--;
-            if (dir === 'down') newY++;
-            if (dir === 'left') newX--;
-            if (dir === 'right') newX++;
-            
-            // Permite movimiento si es túnel
-            if (newX < 0 || newX >= GRID_WIDTH) return true;
-            
-            return !isWall(newX, newY);
-        }
-
-        function moveEntity(entity, dir) {
-            let { x, y } = entity;
-            if (dir === 'up') y--;
-            if (dir === 'down') y++;
-            if (dir === 'left') x--;
-            if (dir === 'right') x++;
-            
-            // 🔄 LÓGICA DEL TÚNEL (Teletransporte)
-            if (x < 0) x = GRID_WIDTH - 1;
-            if (x >= GRID_WIDTH) x = 0;
-            
-            return { x, y };
-        }
-
-        function drawMaze() {
-            for (let y = 0; y < GRID_HEIGHT; y++) {
-                for (let x = 0; x < GRID_WIDTH; x++) {
-                    if (MAZE[y][x] === '#') {
-                        ctx.fillStyle = '#1e3a8a';
-                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                    }
-                }
-            }
-        }
-
-        function drawDots() {
-            dots.forEach(dot => {
-                ctx.fillStyle = '#FFB897';
-                const centerX = dot.x * CELL_SIZE + CELL_SIZE / 2;
-                const centerY = dot.y * CELL_SIZE + CELL_SIZE / 2;
-
-                if (dot.type === 'power') {
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, CELL_SIZE / 4, 0, Math.PI * 2);
-                    ctx.fill();
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, CELL_SIZE / 8, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
-
-        function drawPacman() {
-            ctx.save();
-            const centerX = pacman.x * CELL_SIZE + CELL_SIZE / 2;
-            const centerY = pacman.y * CELL_SIZE + CELL_SIZE / 2;
-            const radius = CELL_SIZE / 2.5; 
-
-            ctx.translate(centerX, centerY);
-            
-            let rotation = 0;
-            if (pacman.dir === 'up') rotation = -Math.PI / 2;
-            if (pacman.dir === 'down') rotation = Math.PI / 2;
-            if (pacman.dir === 'left') rotation = Math.PI;
-            ctx.rotate(rotation);
-
-            ctx.fillStyle = '#FFFF00';
-            ctx.beginPath();
-            
-            if (mouthOpen) {
-                ctx.arc(0, 0, radius, 0.2 * Math.PI, 1.8 * Math.PI);
-                ctx.lineTo(0, 0);
-            } else {
-                ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            }
-            
-            ctx.fill();
-            ctx.restore();
-        }
-
-        function drawGhosts() {
-            ghosts.forEach(ghost => {
-                ctx.fillStyle = scared ? '#0000FF' : ghost.color;
-                const centerX = ghost.x * CELL_SIZE + CELL_SIZE / 2;
-                const centerY = ghost.y * CELL_SIZE + CELL_SIZE / 2;
-                const radius = CELL_SIZE / 2.5;
-
-                // Dibujo simple del cuerpo 
-                ctx.beginPath();
-                ctx.arc(centerX, centerY - radius / 4, radius, Math.PI, 0, false);
-                ctx.lineTo(centerX + radius, centerY + radius);
-                ctx.lineTo(centerX - radius, centerY + radius);
-                ctx.closePath();
-                ctx.fill();
-
-                // Ojos 
-                const eyeSize = CELL_SIZE / 10;
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(centerX - radius / 2, centerY - radius / 3, eyeSize, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(centerX + radius / 2, centerY - radius / 3, eyeSize, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Iris (pupilas)
-                if (!scared) {
-                    const irisSize = CELL_SIZE / 20;
-                    ctx.fillStyle = 'black';
-                    ctx.beginPath();
-                    ctx.arc(centerX - radius / 2, centerY - radius / 3, irisSize, 0, Math.PI * 2);
+ ctx.arc(ghost.x * CELL_SIZE + 7, ghost.y * CELL_SIZE + 8, 1, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.beginPath();
-                    ctx.arc(centerX + radius / 2, centerY - radius / 3, irisSize, 0, Math.PI * 2);
+                    ctx.arc(ghost.x * CELL_SIZE + 13, ghost.y * CELL_SIZE + 8, 1, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
         }
 
         function updatePacman() {
+            // Lógica de movimiento
             if (canMove(pacman.x, pacman.y, pacman.nextDir)) {
                 pacman.dir = pacman.nextDir;
             }
@@ -375,6 +59,7 @@
                     if (scared) {
                         score += 200;
                         document.getElementById('score').textContent = 'Score: ' + score;
+                        // Reiniciar fantasma a su posición inicial
                         ghost.x = 14;
                         ghost.y = 14;
                     } else {
@@ -414,26 +99,20 @@
             gameLoop();
         }
 
-        function draw() {
-            // 🚨 SOLUCIÓN AL EFECTO FANTASMA: Borrado rápido del canvas
-             if (!CELL_SIZE || CELL_SIZE <= 0) return; // Evita dibujar si no hay tamaño
-            
+        // 🚨 FUNCIÓN CRUCIAL: Limpieza y Bucle del Juego
+        function gameLoop() {
+            if (gameOver) return;
+
+            // ✅ SOLUCIÓN AL EFECTO FANTASMA: Borrado rápido del canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             
             drawMaze();
             drawDots();
             drawGhosts();
             drawPacman();
-        }
-
-        function gameLoop() {
-            if (gameOver) return;
-
-            draw(); // Llama a draw en cada frame (suave)
 
             animationFrame++;
-            // Actualiza la lógica de movimiento y colisiones (10 FPS de lógica)
-            if (animationFrame % 6 === 0) { 
+            if (animationFrame % 10 === 0) {
                 mouthOpen = !mouthOpen;
                 updatePacman();
                 updateGhosts();
@@ -457,6 +136,7 @@
         canvas.addEventListener('touchstart', (e) => {
             if (gameOver) return;
             e.preventDefault();
+            // Guarda la posición inicial del toque
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         });
@@ -465,17 +145,22 @@
             if (gameOver) return;
             e.preventDefault();
             
+            // Obtener la posición final al levantar el dedo
+            // Nota: touchend no tiene touches[], usamos la posición de touchend
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
 
             const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
 
+            // Determinar si el movimiento fue horizontal o vertical
             if (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD) {
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Movimiento horizontal (Izquierda/Derecha)
                     if (deltaX > 0) pacman.nextDir = 'right';
                     else pacman.nextDir = 'left';
                 } else {
+                    // Movimiento vertical (Arriba/Abajo)
                     if (deltaY > 0) pacman.nextDir = 'down';
                     else pacman.nextDir = 'up';
                 }
@@ -493,24 +178,8 @@
 
         document.getElementById('restartBtn').addEventListener('click', resetGame);
 
-        // 🚀 FUNCIÓN DE INICIO: Asegura que el tamaño se calcule y el juego empiece
-        function initGame() {
-            // 1. Fuerza el cálculo de tamaño (soluciona la pantalla negra)
-            resizeCanvas(); 
-            
-            // 2. Inicializa los puntos
-            initDots();
-            
-            // 3. Inicia el bucle de animación
-            if (!gameOver) {
-                gameLoop(); 
-            }
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-        
-        // 🚨 CAMBIO FINAL: Llamar a initGame al cargar
-        initGame(); 
+        initDots();
+        gameLoop();
     </script>
 </body>
 </html>
