@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pac-Man Game</title>
+    <title>Pac-Man Game - Mobile Ready</title>
     <style>
         * {
             margin: 0;
@@ -27,16 +27,20 @@
         #score {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Ajustado para móvil */
         }
 
+        /* 💥 CORRECCIÓN FINAL DE TAMAÑO: Ocupa el 100% del ancho del viewport */
         #gameCanvas {
             border: 4px solid #1e40af;
             background-color: #000;
+            width: 100vw; /* Usa el 100% del ancho */
+            height: auto; 
+            max-width: 560px; /* Límite para evitar desproporción en pantallas grandes */
         }
 
         #controls {
-            margin-top: 20px;
+            margin-top: 10px;
             text-align: center;
         }
 
@@ -50,7 +54,7 @@
             padding: 40px;
             border-radius: 10px;
             text-align: center;
-            z-index: 10; /* Asegura que se vea por encima del canvas */
+            z-index: 10; 
         }
 
         #gameOver h2 {
@@ -82,19 +86,13 @@
         .info {
             font-size: 14px;
             color: #999;
-            margin-top: 10px;
-        }
-        /* Estilo para mostrar una guía de joystick virtual (opcional) */
-        #touchGuide {
-            color: #FFD700;
-            font-size: 14px;
             margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
-    <canvas id="gameCanvas" width="560" height="620"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div id="controls">
         <p>Mueve el dedo sobre la pantalla para dirigir a Pac-Man.</p>
         <p class="info">Usa las flechas del teclado en PC.</p>
@@ -110,18 +108,22 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const CELL_SIZE = 20;
+        
         const GRID_WIDTH = 28;
         const GRID_HEIGHT = 31;
+        const ASPECT_RATIO = GRID_HEIGHT / GRID_WIDTH; // 31/28
+
+        // Se inicializan dinámicamente
+        let CELL_SIZE; 
         
         // --- Variables TÁCTILES ---
         let touchStartX = 0;
         let touchStartY = 0;
-        const SWIPE_THRESHOLD = 30; // Distancia mínima para detectar un movimiento
+        const SWIPE_THRESHOLD = 30; 
         // -------------------------
 
         const MAZE = [
-            // ... (Laberinto completo para mantener el archivo conciso, asume que está aquí)
+            // Mapa completo (28x31)
             "############################",
             "#............##............#",
             "#.####.#####.##.#####.####.#",
@@ -136,7 +138,7 @@
             "######.##          ##.######",
             "######.## ###--### ##.######",
             "######.## #        # ##.######",
-            "       .   #        #   .      ",
+            "       .   #        #   .      ", // Fila del túnel
             "######.## #        # ##.######",
             "######.## ######## ##.######",
             "######.##          ##.######",
@@ -170,6 +172,17 @@
         let mouthOpen = true;
         let animationFrame = 0;
 
+        // 📐 Lógica para hacer el Canvas Responsivo
+        function resizeCanvas() {
+            // Obtiene el ancho del CSS (100vw o max-width: 560px)
+            const displayWidth = canvas.clientWidth; 
+            canvas.width = displayWidth;
+            canvas.height = displayWidth * ASPECT_RATIO;
+            // Se calcula el tamaño de la celda para que todo se dibuje escalado
+            CELL_SIZE = canvas.width / GRID_WIDTH; 
+            draw(); 
+        }
+        
         function initDots() {
             dots = [];
             for (let y = 0; y < GRID_HEIGHT; y++) {
@@ -182,8 +195,10 @@
         }
 
         function isWall(x, y) {
-            if (y < 0 || y >= GRID_HEIGHT || x < 0 || x >= GRID_WIDTH) return true;
-            return MAZE[y][x] === '#';
+            // Maneja límites de Y y cheques de muro en X
+            if (y < 0 || y >= GRID_HEIGHT) return true;
+            if (x >= 0 && x < GRID_WIDTH && MAZE[y][x] === '#') return true; 
+            return false;
         }
 
         function canMove(x, y, dir) {
@@ -193,8 +208,8 @@
             if (dir === 'left') newX--;
             if (dir === 'right') newX++;
             
-            if (newX < 0) newX = GRID_WIDTH - 1;
-            if (newX >= GRID_WIDTH) newX = 0;
+            // Permite movimiento si es túnel
+            if (newX < 0 || newX >= GRID_WIDTH) return true;
             
             return !isWall(newX, newY);
         }
@@ -206,6 +221,7 @@
             if (dir === 'left') x--;
             if (dir === 'right') x++;
             
+            // 🔄 LÓGICA DEL TÚNEL (Teletransporte)
             if (x < 0) x = GRID_WIDTH - 1;
             if (x >= GRID_WIDTH) x = 0;
             
@@ -226,13 +242,16 @@
         function drawDots() {
             dots.forEach(dot => {
                 ctx.fillStyle = '#FFB897';
+                const centerX = dot.x * CELL_SIZE + CELL_SIZE / 2;
+                const centerY = dot.y * CELL_SIZE + CELL_SIZE / 2;
+
                 if (dot.type === 'power') {
                     ctx.beginPath();
-                    ctx.arc(dot.x * CELL_SIZE + 10, dot.y * CELL_SIZE + 10, 5, 0, Math.PI * 2);
+                    ctx.arc(centerX, centerY, CELL_SIZE / 4, 0, Math.PI * 2);
                     ctx.fill();
                 } else {
                     ctx.beginPath();
-                    ctx.arc(dot.x * CELL_SIZE + 10, dot.y * CELL_SIZE + 10, 2, 0, Math.PI * 2);
+                    ctx.arc(centerX, centerY, CELL_SIZE / 8, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
@@ -240,7 +259,11 @@
 
         function drawPacman() {
             ctx.save();
-            ctx.translate(pacman.x * CELL_SIZE + 10, pacman.y * CELL_SIZE + 10);
+            const centerX = pacman.x * CELL_SIZE + CELL_SIZE / 2;
+            const centerY = pacman.y * CELL_SIZE + CELL_SIZE / 2;
+            const radius = CELL_SIZE / 2.5; // El radio escala con el tamaño de la celda
+
+            ctx.translate(centerX, centerY);
             
             let rotation = 0;
             if (pacman.dir === 'up') rotation = -Math.PI / 2;
@@ -252,10 +275,10 @@
             ctx.beginPath();
             
             if (mouthOpen) {
-                ctx.arc(0, 0, 10, 0.2 * Math.PI, 1.8 * Math.PI);
+                ctx.arc(0, 0, radius, 0.2 * Math.PI, 1.8 * Math.PI);
                 ctx.lineTo(0, 0);
             } else {
-                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
             }
             
             ctx.fill();
@@ -265,43 +288,43 @@
         function drawGhosts() {
             ghosts.forEach(ghost => {
                 ctx.fillStyle = scared ? '#0000FF' : ghost.color;
-                
-                // Cuerpo
+                const centerX = ghost.x * CELL_SIZE + CELL_SIZE / 2;
+                const centerY = ghost.y * CELL_SIZE + CELL_SIZE / 2;
+                const radius = CELL_SIZE / 2.5;
+
+                // Dibujo simple escalado del cuerpo (media luna + rectangulo)
                 ctx.beginPath();
-                ctx.arc(ghost.x * CELL_SIZE + 10, ghost.y * CELL_SIZE + 8, 8, Math.PI, 0, false);
-                ctx.lineTo(ghost.x * CELL_SIZE + 18, ghost.y * CELL_SIZE + 18);
-                ctx.lineTo(ghost.x * CELL_SIZE + 15, ghost.y * CELL_SIZE + 15);
-                ctx.lineTo(ghost.x * CELL_SIZE + 12, ghost.y * CELL_SIZE + 18);
-                ctx.lineTo(ghost.x * CELL_SIZE + 9, ghost.y * CELL_SIZE + 15);
-                ctx.lineTo(ghost.x * CELL_SIZE + 6, ghost.y * CELL_SIZE + 18);
-                ctx.lineTo(ghost.x * CELL_SIZE + 3, ghost.y * CELL_SIZE + 15);
-                ctx.lineTo(ghost.x * CELL_SIZE + 2, ghost.y * CELL_SIZE + 18);
+                ctx.arc(centerX, centerY - radius / 4, radius, Math.PI, 0, false);
+                ctx.lineTo(centerX + radius, centerY + radius);
+                ctx.lineTo(centerX - radius, centerY + radius);
                 ctx.closePath();
                 ctx.fill();
 
-                // Ojos
+                // Ojos (escalados)
+                const eyeSize = CELL_SIZE / 10;
                 ctx.fillStyle = 'white';
                 ctx.beginPath();
-                ctx.arc(ghost.x * CELL_SIZE + 7, ghost.y * CELL_SIZE + 8, 2, 0, Math.PI * 2);
+                ctx.arc(centerX - radius / 2, centerY - radius / 3, eyeSize, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(ghost.x * CELL_SIZE + 13, ghost.y * CELL_SIZE + 8, 2, 0, Math.PI * 2);
+                ctx.arc(centerX + radius / 2, centerY - radius / 3, eyeSize, 0, Math.PI * 2);
                 ctx.fill();
-
+                
+                // Iris (pupilas)
                 if (!scared) {
+                    const irisSize = CELL_SIZE / 20;
                     ctx.fillStyle = 'black';
                     ctx.beginPath();
-                    ctx.arc(ghost.x * CELL_SIZE + 7, ghost.y * CELL_SIZE + 8, 1, 0, Math.PI * 2);
+                    ctx.arc(centerX - radius / 2, centerY - radius / 3, irisSize, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.beginPath();
-                    ctx.arc(ghost.x * CELL_SIZE + 13, ghost.y * CELL_SIZE + 8, 1, 0, Math.PI * 2);
+                    ctx.arc(centerX + radius / 2, centerY - radius / 3, irisSize, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
         }
 
         function updatePacman() {
-            // Lógica de movimiento
             if (canMove(pacman.x, pacman.y, pacman.nextDir)) {
                 pacman.dir = pacman.nextDir;
             }
@@ -352,7 +375,6 @@
                     if (scared) {
                         score += 200;
                         document.getElementById('score').textContent = 'Score: ' + score;
-                        // Reiniciar fantasma a su posición inicial
                         ghost.x = 14;
                         ghost.y = 14;
                     } else {
@@ -389,23 +411,23 @@
             animationFrame = 0;
             document.getElementById('score').textContent = 'Score: 0';
             document.getElementById('gameOver').style.display = 'none';
+            // Vuelve a llamar a gameLoop para iniciar el bucle de animación
             gameLoop();
         }
 
-        // 🚨 FUNCIÓN CRUCIAL: Limpieza y Bucle del Juego
         function gameLoop() {
             if (gameOver) return;
 
-            // ✅ SOLUCIÓN AL EFECTO FANTASMA: Borrado rápido del canvas
+            // Limpia y dibuja
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            
             drawMaze();
             drawDots();
             drawGhosts();
             drawPacman();
 
             animationFrame++;
-            if (animationFrame % 10 === 0) {
+            // Actualiza la lógica de movimiento y colisiones 10 veces por segundo
+            if (animationFrame % 6 === 0) { // Ajustado para ser más suave (aprox 10 FPS de lógica)
                 mouthOpen = !mouthOpen;
                 updatePacman();
                 updateGhosts();
@@ -429,7 +451,6 @@
         canvas.addEventListener('touchstart', (e) => {
             if (gameOver) return;
             e.preventDefault();
-            // Guarda la posición inicial del toque
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         });
@@ -438,22 +459,17 @@
             if (gameOver) return;
             e.preventDefault();
             
-            // Obtener la posición final al levantar el dedo
-            // Nota: touchend no tiene touches[], usamos la posición de touchend
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
 
             const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
 
-            // Determinar si el movimiento fue horizontal o vertical
             if (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD) {
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // Movimiento horizontal (Izquierda/Derecha)
                     if (deltaX > 0) pacman.nextDir = 'right';
                     else pacman.nextDir = 'left';
                 } else {
-                    // Movimiento vertical (Arriba/Abajo)
                     if (deltaY > 0) pacman.nextDir = 'down';
                     else pacman.nextDir = 'up';
                 }
@@ -471,6 +487,9 @@
 
         document.getElementById('restartBtn').addEventListener('click', resetGame);
 
+        // Inicialización
+        resizeCanvas(); // Ajusta el tamaño al inicio
+        window.addEventListener('resize', resizeCanvas); // Ajusta al rotar el móvil
         initDots();
         gameLoop();
     </script>
