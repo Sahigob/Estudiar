@@ -2366,7 +2366,7 @@ function startGame11_Pinball() { showGameContainer(11); }
         }
 
         function updateLevel() {
-    const newLevel = Math.floor(points / 1) + 1;
+    const newLevel = Math.floor(points / 1) + 10;
     if (newLevel > level) {
         level = newLevel;
         startRewardGame();
