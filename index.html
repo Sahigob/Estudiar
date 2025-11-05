@@ -2156,7 +2156,7 @@ function startGame11_Pinball() { showGameContainer(11); }
     const subjectChosen = document.getElementById('subjectChoose').value; 
     
     // Comprobación de que la asignatura existe en el currículo para evitar errores.
-    const currentCurriculum = curriculum[subjectChosen] ? curriculum[subjectChosen]['1ºESO'] : {};
+    const currentCurriculum = curriculum[subjectChosen] ? curriculum[subjectChosen]['5ºPrimaria'] : {};
     
     // 2. Limpiar el selector de evaluaciones.
     document.getElementById('evaluationChoose').innerHTML = '<option value="">--Selecciona Evaluación--</option>';
