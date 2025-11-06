@@ -299,60 +299,56 @@
     <p>Has subido al Nivel <span id="rewardLevel"></span>. Tómate un descanso y ¡a jugar!</p>
 </div>
 
-<div id="arkanoidGameContainer" class="game-container">
+<div id="ArkanoidGameContainer" class="game-container">
     <h2>ArKanoid Táctil</h2>
-    <iframe id="iframe_arkanoid" src="juegos/arkanoid.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Arkanoid" src="juegos/Arkanoid.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="memoryGameContainer" class="game-container">
+<div id="MemoryGameContainer" class="game-container">
     <h2>Juego de Pares</h2>
-    <iframe id="iframe_memoria" src="juegos/memoria.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Memoria" src="juegos/Memoria.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="matamarcianosGameContainer" class="game-container">
+<div id="MatamarcianosGameContainer" class="game-container">
     <h2>Matamarcianos</h2>
-    <iframe id="iframe_matamarcianos" src="juegos/matamarcianos.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Matamarcianos" src="juegos/Matamarcianos.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="clicksGameContainer" class="game-container">
+<div id="AsteriodesameContainer" class="game-container">
     <h2>Juego de Clicks</h2>
-    <iframe id="iframe_clicks" src="juegos/clicks.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Ateroides" src="Asteroides.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="quizGameContainer" class="game-container">
+<div id="DonkeykongGameContainer" class="game-container">
     <h2>Quiz Rápido</h2>
-    <iframe id="iframe_quiz" src="juegos/quiz.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Donkeykong" src="juegos/Donkeykong.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="guessGameContainer" class="game-container">
+<div id="FroggerGameContainer" class="game-container">
     <h2>Adivina la Palabra</h2>
-    <iframe id="iframe_guess" src="juegos/guess.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Frogger" src="juegos/Frogger.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="flappyGameContainer" class="game-container">
+<div id="Pong" class="game-container">
     <h2>Flappy Bird Clon</h2>
-    <iframe id="iframe_flappy" src="juegos/flappy.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Pong" src="juegos/Pong.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="snakeGameContainer" class="game-container">
+<div id="TictactoeGameContainer" class="game-container">
     <h2>Serpiente Clásica</h2>
-    <iframe id="iframe_snake" src="juegos/snake.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Tictactoe" src="juegos/Tictactoe.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="tetrisGameContainer" class="game-container">
+<div id="TetrisGameContainer" class="game-container">
     <h2>Tetris Lite</h2>
-    <iframe id="iframe_tetris" src="juegos/tetris.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Tetris" src="juegos/Tetris.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="raceGameContainer" class="game-container">
+<div id="PacmanGameContainer" class="game-container">
     <h2>Carrera de Autos</h2>
-    <iframe id="iframe_race" src="juegos/race.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+    <iframe id="iframe_Pacman" src="juegos/Pacman.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="pinballGameContainer" class="game-container">
-    <h2>Pinball Matemático</h2>
-    <iframe id="iframe_pinball" src="juegos/pinball.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
-</div>
 
 <div style="margin-top: 20px;">
     <button onclick="endGame()" style="padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Volver a los Ejercicios</button>
@@ -2027,28 +2023,28 @@
 function startGame1_Arkanoid() { showGameContainer(1); }
 function startGame2_Memoria() { showGameContainer(2); }
 function startGame3_Matamarcianos() { showGameContainer(3); }
-function startGame4_donkeykong() { showGameContainer(4); }
-function startGame5_frogger() { showGameContainer(5); }
-function startGame6_pong() { showGameContainer(6); }
-function startGame7_tictactoe() { showGameContainer(7); }
+function startGame4_Donkeykong() { showGameContainer(4); }
+function startGame5_Frogger() { showGameContainer(5); }
+function startGame6_Pong() { showGameContainer(6); }
+function startGame7_Tictactoe() { showGameContainer(7); }
 function startGame8_Asterioides() { showGameContainer(8); }
-function startGame9_tetris() { showGameContainer(9); } 
+function startGame9_Tetris() { showGameContainer(9); } 
 function startGame10_Pacman() { showGameContainer(10); }
-function startGame11_Pinball() { showGameContainer(11); }
+
 
 
             const availableGames = [
-    { id: 1, name: "Arkanoid Táctil", func: "startGame1_Arkanoid", file: "arkanoid.html", container: "arkanoidGameContainer", iframe: "iframe_arkanoid" },
-    { id: 2, name: "Juego de Pares", func: "startGame2_Memoria", file: "memoria.html", container: "memoriaGameContainer", iframe: "iframe_memoria" },
-    { id: 3, name: "Matamarcianos", func: "startGame3_Matamarcianos", file: "matamarcianos.html", container: "matamarcianosGameContainer", iframe: "iframe_matamarcianos" },
-    { id: 4, name: "donkeykong", func: "startGame4_donkeykong", file: "donkeykong.html", container: "donkeykongGameContainer", iframe: "iframe_donkeykong" },
-    { id: 5, name: "Juego de la Rana", func: "startGame5_frogger", file: "frogger.html", container: "froggerGameContainer", iframe: "iframe_frogger" },
+    { id: 1, name: "Arkanoid Táctil", func: "startGame1_Arkanoid", file: "Arkanoid.html", container: "ArkanoidGameContainer", iframe: "iframe_Arkanoid" },
+    { id: 2, name: "Juego de Pares", func: "startGame2_Memoria", file: "Memoria.html", container: "MemoriaGameContainer", iframe: "iframe_Memoria" },
+    { id: 3, name: "Matamarcianos", func: "startGame3_Matamarcianos", file: "Matamarcianos.html", container: "MatamarcianosGameContainer", iframe: "iframe_Matamarcianos" },
+    { id: 4, name: "Donkeykong", func: "startGame4_Donkeykong", file: "Donkeykong.html", container: "DonkeykongGameContainer", iframe: "iframe_Donkeykong" },
+    { id: 5, name: "Juego de la Rana", func: "startGame5_Frogger", file: "Frogger.html", container: "FroggerGameContainer", iframe: "iframe_Frogger" },
     { id: 6, name: "Tenis", func: "startGame6_pong", file: "pong.html", container: "pongGameContainer", iframe: "iframe_pong" },
-    { id: 7, name: "Tres en Raya", func: "startGame7_tictactoe", file: "tictactoe.html", container: "tictactoeGameContainer", iframe: "iframe_tictactoe" },
-    { id: 8, name: "Asterioides", func: "startGame8_Asterioides", file: "asterioides.html", container: "asterioidesGameContainer", iframe: "iframe_asterioides" },
-    { id: 9, name: "Tetris Lite", func: "startGame9_tetris", file: "tetris.html", container: "tetrisGameContainer", iframe: "iframe_tetris" },
-    { id: 10, name: "Pacman", func: "startGame10_Pacman", file: "pacman.html", container: "pacmanGameContainer", iframe: "iframe_pacman" },
-    { id: 11, name: "Pinball Matemático", func: "startGame11_Pinball", file: "pinball.html", container: "pinballGameContainer", iframe: "iframe_pinball" }
+    { id: 7, name: "Tres en Raya", func: "startGame7_Tictactoe", file: "Tictactoe.html", container: "TictactoeGameContainer", iframe: "iframe_Tictactoe" },
+    { id: 8, name: "Asterioides", func: "startGame8_Asterioides", file: "Asterioides.html", container: "AsterioidesGameContainer", iframe: "iframe_Asterioides" },
+    { id: 9, name: "Tetris Lite", func: "startGame9_Tetris", file: "Tetris.html", container: "TetrisGameContainer", iframe: "iframe_Tetris" },
+    { id: 10, name: "Pacman", func: "startGame10_Pacman", file: "Pacman.html", container: "PacmanGameContainer", iframe: "iframe_Pacman" }
+    
 ];
 
         let animationFrameId = null; 
