@@ -2307,15 +2307,31 @@ function startGame11_Pinball() { showGameContainer(11); }
             document.getElementById('progress').style.width = progress + '%';
         }
 
-        function updateLevel() {
-    const newLevel = Math.floor(points / 1) + 1;
+       function updateLevel() {
+    // 1. Añadimos un chequeo de seguridad: Si no hay ejercicios cargados, salimos.
+    if (currentExercises.length === 0 && points === 0) {
+        // Aseguramos que el nivel inicial se muestre
+        document.getElementById('levelDisplay').innerText = `Nivel: ${level}`;
+        return; 
+    }
+
+    const newLevel = Math.floor(points / 1) + 1; 
     if (newLevel > level) {
         level = newLevel;
-        startRewardGame();
+        
+        // El resto de la lógica de la recompensa
+        const rewardMessage = document.getElementById('rewardMessage');
+        if (rewardMessage) {
+            rewardMessage.style.display = 'block'; 
+            document.getElementById('rewardLevel').innerText = level;
+        }
+        // Retraso para ver el mensaje, lo mantenemos por ahora
+        setTimeout(startRewardGame, 100); 
+        
 
-        // 🎉 Mensaje especial al alcanzar el nivel 10
+        // Mensaje especial
         if (level === 10) {
-            alert("¡Has alcanzado el nivel 10! ¡Eres un campeó del estudio!");
+            alert("¡Has alcanzado el nivel 10! ¡Eres un campeón del estudio!");
         }
     }
     document.getElementById('levelDisplay').innerText = `Nivel: ${level}`;
