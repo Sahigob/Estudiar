@@ -100,127 +100,7 @@
             opacity: 1;
         }
 
-        /* =================================================================== */
-        /* Estilos de la pantalla de Juego (Arcanoid) */
-        /* =================================================================== */
-        #gameScreen {
-            background-color: #202020;
-            min-height: auto;
-            /* Flexbox para centrar el canvas y el juego de memoria */
-            display: none; 
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        #gameScreen.active {
-            display: flex; 
-        }
-
-        /* Estilos ARCANOID */
-        #juegoCanvas {
-            border: 4px solid #fff;
-            background: #000;
-            display: block;
-            margin: 20px auto;
-            touch-action: none; 
-        }
-        #gameControls {
-            margin-top: 15px;
-        }
-
-        /* =================================================================== */
-        /* Estilos JUEGO DE PARES (Memory) */
-        /* =================================================================== */
-        #memoryGameContainer {
-            width: 100%; /* Ocupa el ancho de la pantalla */
-            max-width: 320px;
-            display: none; /* Oculto por defecto */
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: #fce4ec; /* Fondo rosa claro */
-            border-radius: 10px;
-        }
-
-        #memoryGameContainer.active {
-            display: flex;
-        }
-
-        #memoryGameContainer header h1 {
-            color: #d81b60; /* Rosa fuerte */
-            font-size: 1.8em;
-            text-align: center;
-        }
-
-        #memoryGameContainer p {
-            color: #4a148c;
-            font-weight: 600;
-        }
-
-        .game-container-memory {
-            width: 300px; /* Tamaño adaptado para móvil/tablet */
-            height: 350px; 
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 columnas */
-            grid-gap: 8px;
-            perspective: 1000px;
-            margin-top: 15px;
-        }
-
-        .memory-card {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform .5s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        /* Clase para cuando la carta está volteada o emparejada */
-        .memory-card.flip, .memory-card.match {
-            transform: rotateY(180deg);
-        }
-
-        .front-face, .back-face {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            backface-visibility: hidden;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 35px;
-        }
-
-        .front-face {
-            transform: rotateY(180deg);
-            background-color: #ffffff;
-        }
-
-        .back-face {
-            background-color: #4db6ac; /* Verde azulado para el reverso */
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            border: 3px solid #00897b;
-        }
-
-        #mensaje-victoria-memory {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #a5d6a7; /* Verde suave */
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 0 15px rgba(0, 150, 0, 0.5);
-            width: 80%;
-        }
-        
-        #mensaje-victoria-memory h2 {
-            color: #388e3c;
-        }
+      
 .reward-banner {
   background-color: rgba(255, 255, 255, 0.95);
   color: #333;
@@ -312,7 +192,47 @@
         font-size: 1em;
     }
 }
+/* =================================================================== */
+/* Estilos de la pantalla de Juego (MODIFICADO) */
+/* =================================================================== */
+#gameScreen {
+    /* Eliminamos el fondo negro (usamos el fondo blanco/claro de .screen) */
+    background-color: #fff; 
+    min-height: 100vh; /* Asegura que cubra toda la vista */
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0; /* Eliminamos el padding para que el juego se ajuste al borde */
+    max-width: none; /* Permitimos que ocupe todo el ancho */
+    box-shadow: none; /* Eliminamos la sombra */
+}
+#gameScreen.active {
+    display: flex; 
+}
 
+/* CONTENEDORES DE JUEGO (NUEVO) */
+/* Aseguramos que el contenedor del juego ocupe todo el espacio disponible */
+.game-container { 
+    width: 100%;
+    /* Alto de la pantalla menos el banner y el botón de volver */
+    height: calc(100vh - 100px); 
+    margin-top: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+}
+.game-container.active {
+    display: flex;
+}
+
+/* Iframe para incrustar el juego (NUEVO) */
+.game-container iframe {
+    width: 100%;
+    /* 100% del alto disponible dentro de .game-container */
+    height: 100%; 
+    border: none; 
+}
     </style>
 </head>
 <body>
@@ -375,70 +295,68 @@
 
     <div id="gameScreen" class="screen">
         <div id="rewardMessage" class="reward-banner">
-  <h2>¡FELICIDADES, Alex! ¡PREMIO! 🎉</h2>
-  <p>Has subido al Nivel <span id="rewardLevel"></span>. Tómate un descanso y ¡a jugar!</p>
-</div>
-        
-        <div id="arkanoidGameContainer" style="display: none;">
-    <h2>Arkanoid Táctil</h2>
-    <iframe id="iframe_arkanoid" src="" width="100%" height="500px" frameborder="0" scrolling="no"></iframe>
+    <h2>¡FELICIDADES, Alex! ¡PREMIO! 🎉</h2>
+    <p>Has subido al Nivel <span id="rewardLevel"></span>. Tómate un descanso y ¡a jugar!</p>
 </div>
 
-<div id="memoriaGameContainer" style="display: none;">
+<div id="arkanoidGameContainer" class="game-container">
+    <h2>ArKanoid Táctil</h2>
+    <iframe id="iframe_arkanoid" src="juegos/arkanoid.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
+</div>
+
+<div id="memoryGameContainer" class="game-container">
     <h2>Juego de Pares</h2>
-    <iframe id="iframe_memoria" src="" width="100%" height=800px" frameborder="0" scrolling="no"></iframe>
+    <iframe id="iframe_memoria" src="juegos/memoria.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="matamarcianosGameContainer" style="display: none;">
+<div id="matamarcianosGameContainer" class="game-container">
     <h2>Matamarcianos</h2>
-    <iframe id="iframe_matamarcianos" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+    <iframe id="iframe_matamarcianos" src="juegos/matamarcianos.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="donkeykongGameContainer" style="display: none;">
-    <h2>donkeykong</h2>
-    <iframe id="iframe_donkeykong" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="clicksGameContainer" class="game-container">
+    <h2>Juego de Clicks</h2>
+    <iframe id="iframe_clicks" src="juegos/clicks.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="froggerGameContainer" style="display: none;">
-    <h2>Juego de la Rana</h2>
-    <iframe id="iframe_frogger" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="quizGameContainer" class="game-container">
+    <h2>Quiz Rápido</h2>
+    <iframe id="iframe_quiz" src="juegos/quiz.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="pongGameContainer" style="display: none;">
-    <h2>Tenis</h2>
-    <iframe id="iframe_pong" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="guessGameContainer" class="game-container">
+    <h2>Adivina la Palabra</h2>
+    <iframe id="iframe_guess" src="juegos/guess.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="tictactoeGameContainer" style="display: none;">
-    <h2>Tres en Raya</h2>
-    <iframe id="iframe_tictactoe" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="flappyGameContainer" class="game-container">
+    <h2>Flappy Bird Clon</h2>
+    <iframe id="iframe_flappy" src="juegos/flappy.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="asterioidesGameContainer" style="display: none;">
-    <h2>Asterioides</h2>
-    <iframe id="iframe_asterioides" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="snakeGameContainer" class="game-container">
+    <h2>Serpiente Clásica</h2>
+    <iframe id="iframe_snake" src="juegos/snake.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="tetrisGameContainer" style="display: none;">
+<div id="tetrisGameContainer" class="game-container">
     <h2>Tetris Lite</h2>
-    <iframe id="iframe_tetris" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+    <iframe id="iframe_tetris" src="juegos/tetris.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="pacmanGameContainer" style="display: none;">
-    <h2>Pacman</h2>
-    <iframe id="iframe_pacman" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
+<div id="raceGameContainer" class="game-container">
+    <h2>Carrera de Autos</h2>
+    <iframe id="iframe_race" src="juegos/race.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
-<div id="pinballGameContainer" style="display: none;">
+<div id="pinballGameContainer" class="game-container">
     <h2>Pinball Matemático</h2>
-    <iframe id="iframe_pinball" src="" width="100%" height="800px" frameborder="0" scrolling="no"></iframe>
-</div>
-<div style="margin-top: 20px;">
-        <button onclick="endGame()" style="padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Volver a los Ejercicios</button>
-    </div>
-    
+    <iframe id="iframe_pinball" src="juegos/pinball.html" frameborder="0" scrolling="no" allowfullscreen></iframe>
 </div>
 
+<div style="margin-top: 20px;">
+    <button onclick="endGame()" style="padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Volver a los Ejercicios</button>
+</div>
     <script>
         // ===================================================================
         // 1. ESTRUCTURA CURRICULAR (TU CÓDIGO)
@@ -2156,7 +2074,7 @@ function startGame11_Pinball() { showGameContainer(11); }
     const subjectChosen = document.getElementById('subjectChoose').value; 
     
     // Comprobación de que la asignatura existe en el currículo para evitar errores.
-    const currentCurriculum = curriculum[subjectChosen] ? curriculum[subjectChosen]['5ºPrimaria'] : {};
+    const currentCurriculum = curriculum[subjectChosen] ? curriculum[subjectChosen]['1ºESO'] : {};
     
     // 2. Limpiar el selector de evaluaciones.
     document.getElementById('evaluationChoose').innerHTML = '<option value="">--Selecciona Evaluación--</option>';
@@ -2235,22 +2153,7 @@ function startGame11_Pinball() { showGameContainer(11); }
     populateTopics(); 
 }
        function endGame() {
-    // Limpiar Arcanoid
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
-    const canvas = document.getElementById("juegoCanvas");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    document.getElementById('arcanoidGameContainer').style.display = 'none';
-
-    // Limpiar Memory
-    document.getElementById('memoryGameContainer').classList.remove('active');
-    document.querySelector('.game-container-memory').innerHTML = ''; // Limpiar cartas
-
-    // 🔴 Ocultar Matamarcianos
-    document.getElementById('matamarcianosGameContainer').style.display = 'none';
+    
 
     hideAllScreens();
     document.getElementById('exerciseScreen').classList.add('active');
@@ -2366,7 +2269,7 @@ function startGame11_Pinball() { showGameContainer(11); }
         }
 
         function updateLevel() {
-    const newLevel = Math.floor(points / 10) + 1;
+    const newLevel = Math.floor(points / 1) + 1;
     if (newLevel > level) {
         level = newLevel;
         startRewardGame();
