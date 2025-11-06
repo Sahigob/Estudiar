@@ -2388,12 +2388,11 @@ function startGame11_Pinball() { showGameContainer(11); }
     document.getElementById('gameScreen').classList.add('active');
     document.getElementById('rewardLevel').innerText = level;
 
-    // ⬇️ LÍNEA CRUCIAL AÑADIDA: Oculta la pancarta de felicitación
+    // Oculta la pancarta de felicitación (importante si se ejecuta de nuevo)
     const rewardMessage = document.getElementById('rewardMessage');
     if (rewardMessage) {
         rewardMessage.style.display = 'none';
     }
-    // ⬆️ FIN DE LA MODIFICACIÓN
     
     // Lógica para seleccionar un juego aleatorio
     const gameIndex = Math.floor(Math.random() * availableGames.length);
@@ -2403,10 +2402,16 @@ function startGame11_Pinball() { showGameContainer(11); }
         // Llama a la función simplificada, que a su vez llama a showGameContainer()
         window[selectedGame.func](); 
     } else {
+        // Si el juego no está implementado, MUESTRA LA ALERTA, PERO NO LLAMES A ENDGAME()
         alert(`Error: El juego '${selectedGame.name}' no está implementado.`);
-        // Si el juego no está implementado, aún necesitamos mostrar el botón
-        // de volver y ocultar los contenedores de juego si es necesario.
-        endGame();
+        
+        // CORRECCIÓN CRUCIAL: Llamamos a endGame() SOLAMENTE si hay un error
+        // para salir de la pantalla de juego, pero lo hacemos sin la recursión.
+        // La versión correcta de endGame ya no tiene este bucle infinito.
+        
+        // Simplemente volvemos a la pantalla de ejercicios.
+        hideAllScreens();
+        document.getElementById('exerciseScreen').classList.add('active');
     }
 }
 
