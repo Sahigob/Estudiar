@@ -2070,6 +2070,30 @@ function startGame11_Pinball() { showGameContainer(11); }
         return;
     }
 
+    // 1. Obtener la asignatura elegida (que será vacía, pero la preparamos)
+    const subjectChosen = document.getElementById('subjectChoose').value; 
+    
+    // 2. Limpiar y rellenar las evaluaciones (aunque solo haya una opción, lo hacemos seguro)
+    const evaluationSelect = document.getElementById('evaluationChoose');
+    evaluationSelect.innerHTML = '<option value="">--Selecciona Evaluación--</option>';
+
+    // Si hay una asignatura seleccionada desde el inicio (poco probable), la procesamos
+    const currentCurriculum = curriculum[subjectChosen] ? curriculum[subjectChosen]['5ºPrimaria'] : {};
+    Object.keys(currentCurriculum).forEach(evalName => {
+        const o = document.createElement('option');
+        o.value = evalName;
+        o.text = evalName;
+        evaluationSelect.add(o);
+    });
+
+    // 3. Limpiar los temas
+    document.getElementById('topicChoose').innerHTML = '<option value="">--Selecciona Tema--</option>';
+    
+    // 4. Navegar a la pantalla de selección
+    hideAllScreens();
+    document.getElementById('subjectScreen').classList.add('active');
+}
+
     // 1. Obtener la asignatura que el usuario ha seleccionado en el desplegable.
     const subjectChosen = document.getElementById('subjectChoose').value; 
     
@@ -2093,7 +2117,7 @@ function startGame11_Pinball() { showGameContainer(11); }
 
     hideAllScreens();
     document.getElementById('subjectScreen').classList.add('active');
-}
+
 
         function goToLogin() {
             hideAllScreens();
