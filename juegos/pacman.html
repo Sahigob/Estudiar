@@ -353,19 +353,24 @@
         }
 
         function checkCollisions() {
-            ghosts.forEach(ghost => {
-                if (ghost.x === pacman.x && ghost.y === pacman.y) {
-                    if (scared) {
-                        score += 200;
-                        document.getElementById('score').textContent = 'Score: ' + score;
-                        // Reiniciar fantasma a su posición inicial
-                        ghost.x = 14;
-                        ghost.y = 14;
-                    } else {
-                        endGame(false);
-                    }
-                }
-            });
+    ghosts.forEach(ghost => {
+        if (ghost.x === pacman.x && ghost.y === pacman.y) {
+            if (scared) {
+                // El fantasma es comido
+                score += 200;
+                document.getElementById('score').textContent = 'Score: ' + score;
+                // Reiniciar fantasma a su posición inicial
+                // ESTO DEBE SER EL PUNTO DE INICIO DE LA JAULA
+                ghost.x = 14; 
+                ghost.y = 14;
+                // Opcional: El fantasma puede salir con una dirección fija
+                ghost.dir = 'up'; 
+            } else {
+                // Pac-Man muere
+                endGame(false); 
+            }
+        }
+    });
 
             if (dots.length === 0) {
                 endGame(true);
@@ -490,6 +495,7 @@ gameLoop();
     </script>
 </body>
 </html>
+
 
 
 
