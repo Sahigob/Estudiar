@@ -480,12 +480,16 @@
             if (e.key === 'ArrowRight') pacman.nextDir = 'right';
         });
 
-        document.getElementById('restartBtn').addEventListener('click', resetGame);
+       document.getElementById('restartBtn').addEventListener('click', function() {
+    // Si el usuario presiona el botón "Jugar de Nuevo", volvemos a la aplicación de ejercicios.
+    window.parent.endGame(); 
+});
 
-        initDots();
-        gameLoop();
+initDots();
+gameLoop();
     </script>
 </body>
 </html>
+
 
 
