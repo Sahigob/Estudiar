@@ -372,13 +372,18 @@
             }
         }
 
-        function endGame(won) {
-            gameOver = true;
-            document.getElementById('gameOverText').textContent = won ? '¡GANASTE!' : 'GAME OVER';
-            document.getElementById('finalScore').textContent = 'Score Final: ' + score;
-            document.getElementById('gameOver').style.display = 'block';
-        }
+       function endGame(won) {
+    gameOver = true;
+    document.getElementById('gameOverText').textContent = won ? '¡GANASTE!' : 'GAME OVER';
+    document.getElementById('finalScore').textContent = 'Score Final: ' + score;
+    document.getElementById('gameOver').style.display = 'block';
 
+    // 🏆 LÍNEA CRUCIAL: Retorna automáticamente a la aplicación principal 
+    // después de un breve retraso para que el usuario vea el mensaje final.
+    setTimeout(function() {
+        window.parent.endGame(); 
+    }, 2500); // 2.5 segundos de pausa
+}
         function resetGame() {
             pacman = { x: 14, y: 23, dir: 'right', nextDir: 'right' };
             ghosts = [
@@ -482,4 +487,5 @@
     </script>
 </body>
 </html>
+
 
