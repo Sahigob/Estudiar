@@ -57,7 +57,6 @@
             padding: 20px;
             box-sizing: border-box;
             z-index: 100;
-            /* Por defecto oculto */
             display: none; 
         }
         
@@ -125,7 +124,8 @@
         const mensajeFinalDiv = document.getElementById("mensajeFinal");
 
         // 🚨 CONFIGURACIÓN IMPORTANTE 🚨
-        // MODIFICA ESTO a la URL de tu aplicación de estudios
+        // ESTA VARIABLE YA NO ES CRUCIAL, PERO LA MANTENEMOS POR ORDEN.
+        // La redirección real la gestiona el PADRE llamando a window.parent.endGame()
         const URL_APP_ESTUDIOS = "/app/dashboard"; 
 
         function ajustarCanvas() {
@@ -192,7 +192,6 @@
 
         function resetearBola(servidor) {
             const palaServidora = (servidor === 1) ? jugador : cpu;
-            // Usar _x para asegurar que la bola se centra con la posición actual de la pala
             bola.x = (palaServidora._x ?? palaServidora.x()) + palaServidora.ancho / 2;
             bola.y = (servidor === 1)
                 ? palaServidora.y() - bola.radio
@@ -203,7 +202,7 @@
             proximoServidor = servidor;
         }
 
-        // FUNCIÓN CLAVE: Finaliza el juego y redirige
+        // FUNCIÓN CLAVE: Finaliza el juego y notifica al padre
         function finalizarJuego(haGanado) {
             juegoActivo = false;
             
@@ -215,19 +214,20 @@
                 ? `¡🎉 **HAS GANADO** 🎉!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`
                 : `¡😭 **HAS PERDIDO** 😭!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`;
                 
-            mensajeHTML += `<p>Regresando a la aplicación de estudios en 5 segundos...</p>`;
+            mensajeHTML += `<p>Regresando a la aplicación de estudios en 2.5 segundos...</p>`;
             mensajeFinalDiv.innerHTML = mensajeHTML;
 
-            // 2. Redirigir la ventana principal (saliendo del iframe)
+            // 2. Notificar a la ventana principal para que maneje la redirección
             setTimeout(() => {
                 try {
-                    // Esto funciona si los dominios coinciden (misma política de origen)
-                    window.top.location.href = URL_APP_ESTUDIOS;
+                    // LLAMADA CLAVE: Esto dispara la función de tu aplicación principal
+                    window.parent.endGame(); 
                 } catch (e) {
-                    console.error("Error al redirigir la ventana padre. Asegúrate de que los dominios coincidan.", e);
-                    window.location.href = URL_APP_ESTUDIOS;
+                    console.error("Error: No se pudo llamar a window.parent.endGame(). Verifica si la función existe y si hay restricción CORS. Fallback a window.location.", e);
+                    // Fallback (menos ideal)
+                    window.location.href = URL_APP_ESTUDIOS; 
                 }
-            }, 5000);
+            }, 2500); // Usamos 2.5 segundos, igual que en tu código de Pac-Man.
         }
 
         function comprobarVictoria() {
@@ -242,7 +242,6 @@
         function reiniciarJuegoTotal() {
             scoreJugador = 0;
             scoreCPU = 0;
-            // Inicializar las posiciones de las palas
             jugador._x = jugador.x();
             cpu._x = cpu.x();
             resetearBola(1);
