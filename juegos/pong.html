@@ -12,15 +12,18 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100svh;
+            /* 💥 CAMBIO CLAVE: Reducimos la altura visible al 90% */
+            min-height: 90svh; 
             touch-action: none;
             font-family: monospace;
             color: white;
+            /* Añadimos un poco de margen inferior para separarlo de la barra */
+            margin-bottom: 20px; 
         }
 
         h1 {
             font-size: 1.2rem;
-            margin: 10px 0;
+            margin: 5px 0 10px 0; /* Margen superior reducido */
             text-align: center;
         }
 
@@ -28,18 +31,23 @@
             position: relative;
             width: 100%;
             max-width: 360px;
+            flex-grow: 1; /* Permite que ocupe el espacio disponible */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         canvas {
             width: 100%;
-            aspect-ratio: 3 / 5;
+            /* Mantenemos la relación de aspecto 3/5 */
+            aspect-ratio: 3 / 5; 
             height: auto;
             border: 5px solid #00ff00;
             background: #000;
             display: block;
         }
 
-        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN */
+        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN (sin cambios) */
         #mensajeFinal {
             position: absolute;
             top: 0;
@@ -67,6 +75,7 @@
             color: #ccc;
         }
 
+        /* Controles Táctiles (sin cambios) */
         #controlesTactiles {
             display: flex;
             justify-content: center;
@@ -119,13 +128,12 @@
         <button class="botonControl movimiento" data-key="ArrowRight">DER ▶️</button>
     </div>
     <script>
+        // (El script de JavaScript se mantiene exactamente igual que en la corrección anterior,
+        // ya que la lógica de juego y redirección es correcta.)
         const canvas = document.getElementById("juegoCanvas");
         const ctx = canvas.getContext("2d");
         const mensajeFinalDiv = document.getElementById("mensajeFinal");
 
-        // 🚨 CONFIGURACIÓN IMPORTANTE 🚨
-        // ESTA VARIABLE YA NO ES CRUCIAL, PERO LA MANTENEMOS POR ORDEN.
-        // La redirección real la gestiona el PADRE llamando a window.parent.endGame()
         const URL_APP_ESTUDIOS = "/app/dashboard"; 
 
         function ajustarCanvas() {
@@ -136,7 +144,6 @@
         window.addEventListener("resize", ajustarCanvas);
         ajustarCanvas();
 
-        // Movimiento táctil de la pala
         canvas.addEventListener("touchmove", (e) => {
             const toque = e.touches[0];
             const rect = canvas.getBoundingClientRect();
@@ -153,7 +160,6 @@
         let scoreJugador = 0;
         let scoreCPU = 0;
         
-        // Puntuación máxima: 10 puntos
         const PUNTUACION_MAXIMA = 10;
         let proximoServidor = 1;
 
@@ -202,11 +208,9 @@
             proximoServidor = servidor;
         }
 
-        // FUNCIÓN CLAVE: Finaliza el juego y notifica al padre
         function finalizarJuego(haGanado) {
             juegoActivo = false;
             
-            // 1. Mostrar el mensaje de resultado
             mensajeFinalDiv.style.display = 'flex';
             mensajeFinalDiv.style.color = haGanado ? '#00ff00' : '#ff0000';
             
@@ -217,17 +221,14 @@
             mensajeHTML += `<p>Regresando a la aplicación de estudios en 2.5 segundos...</p>`;
             mensajeFinalDiv.innerHTML = mensajeHTML;
 
-            // 2. Notificar a la ventana principal para que maneje la redirección
             setTimeout(() => {
                 try {
-                    // LLAMADA CLAVE: Esto dispara la función de tu aplicación principal
                     window.parent.endGame(); 
                 } catch (e) {
-                    console.error("Error: No se pudo llamar a window.parent.endGame(). Verifica si la función existe y si hay restricción CORS. Fallback a window.location.", e);
-                    // Fallback (menos ideal)
+                    console.error("Error: No se pudo llamar a window.parent.endGame(). Fallback a window.location.", e);
                     window.location.href = URL_APP_ESTUDIOS; 
                 }
-            }, 2500); // Usamos 2.5 segundos, igual que en tu código de Pac-Man.
+            }, 2500);
         }
 
         function comprobarVictoria() {
@@ -265,14 +266,12 @@
             bola.x += bola.velocidadX;
             bola.y += bola.velocidadY;
 
-            // Aceleración progresiva
             const signoY = Math.sign(bola.velocidadY);
             const velocidadActual = Math.abs(bola.velocidadY);
             if (velocidadActual < 8) {
                 bola.velocidadY += signoY * 0.05;
             }
 
-            // Colisión con paredes laterales
             if (bola.x + bola.radio > ancho() || bola.x - bola.radio < 0) {
                 bola.velocidadX *= -1;
             }
@@ -281,27 +280,23 @@
                 bola.x > pala._x && bola.x < pala._x + pala.ancho &&
                 bola.y + bola.radio > pala.y() && bola.y - bola.radio < pala.y() + pala.alto;
 
-            // Colisión Jugador
             if (colision(jugador) && bola.velocidadY > 0) {
                 bola.velocidadY *= -1;
                 const puntoImpacto = (bola.x - (jugador._x + jugador.ancho / 2)) / (jugador.ancho / 2);
                 bola.velocidadX = puntoImpacto * 5;
             }
 
-            // Colisión CPU
             if (colision(cpu) && bola.velocidadY < 0) {
                 bola.velocidadY *= -1;
                 const puntoImpacto = (bola.x - (cpu._x + cpu.ancho / 2)) / (cpu.ancho / 2);
                 bola.velocidadX = puntoImpacto * 5;
             }
 
-            // Bola fuera por arriba (Punto para Jugador)
             if (bola.y - bola.radio < 0) {
                 scoreJugador++;
                 if (!comprobarVictoria()) resetearBola(1);
             }
 
-            // Bola fuera por abajo (Punto para CPU)
             if (bola.y + bola.radio > alto()) {
                 scoreCPU++;
                 if (!comprobarVictoria()) resetearBola(-1);
