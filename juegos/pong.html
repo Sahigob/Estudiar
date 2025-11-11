@@ -1,312 +1,386 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Clásico Pong - Saque desde la Pala</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      background-color: #222;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100svh;
-      touch-action: none;
-      font-family: monospace;
-      color: white;
-    }
+    <meta charset="UTF-8" />
+    <title>Clásico Pong - Recompensa de Estudios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            margin: 0;
+            background-color: #222;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100svh;
+            touch-action: none;
+            font-family: monospace;
+            color: white;
+        }
 
-    h1 {
-      font-size: 1.2rem;
-      margin: 10px 0;
-      text-align: center;
-    }
+        h1 {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            text-align: center;
+        }
 
-    #contenedorJuego {
-      position: relative;
-      width: 100%;
-      max-width: 360px;
-    }
+        #contenedorJuego {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+        }
 
-    canvas {
-      width: 100%;
-      aspect-ratio: 3 / 5;
-      height: auto;
-      border: 5px solid #00ff00;
-      background: #000;
-      display: block;
-    }
+        canvas {
+            width: 100%;
+            aspect-ratio: 3 / 5;
+            height: auto;
+            border: 5px solid #00ff00;
+            background: #000;
+            display: block;
+        }
 
-    #controlesTactiles {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      max-width: 360px;
-      margin-top: 10px;
-      padding: 0 10px;
-      box-sizing: border-box;
-    }
+        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN */
+        #mensajeFinal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 100;
+            /* Por defecto oculto */
+            display: none; 
+        }
+        
+        #mensajeFinal p {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: #ccc;
+        }
 
-    .botonControl {
-      padding: 12px 8px;
-      font-size: 14px;
-      font-weight: bold;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      user-select: none;
-      flex-grow: 1;
-      margin: 0 5px;
-      opacity: 0.9;
-    }
+        #controlesTactiles {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+            margin-top: 10px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
 
-    .botonControl.movimiento {
-      background-color: #3498DB;
-    }
+        .botonControl {
+            padding: 12px 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            flex-grow: 1;
+            margin: 0 5px;
+            opacity: 0.9;
+        }
 
-    .botonControl:active, .botonControl.activo {
-      opacity: 1.0;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
+        .botonControl.movimiento {
+            background-color: #3498DB;
+        }
 
-    @media (min-width: 600px) {
-      #controlesTactiles {
-        display: none;
-      }
-    }
-  </style>
+        .botonControl:active, .botonControl.activo {
+            opacity: 1.0;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @media (min-width: 600px) {
+            #controlesTactiles {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Pong: Saque Auténtico (A 20)</h1>
-  <div id="contenedorJuego">
-    <canvas id="juegoCanvas"></canvas>
-  </div>
-  <div id="controlesTactiles">
-    <button class="botonControl movimiento" data-key="ArrowLeft">◀️ IZQ</button>
-    <button class="botonControl movimiento" data-key="ArrowRight">DER ▶️</button>
-  </div>
-  <script>
-    const canvas = document.getElementById("juegoCanvas");
-    const ctx = canvas.getContext("2d");
+    <h1>Pong: Recompensa (A 10 Puntos)</h1>
+    <div id="contenedorJuego">
+        <canvas id="juegoCanvas"></canvas>
+        <div id="mensajeFinal"></div>
+    </div>
+    <div id="controlesTactiles">
+        <button class="botonControl movimiento" data-key="ArrowLeft">◀️ IZQ</button>
+        <button class="botonControl movimiento" data-key="ArrowRight">DER ▶️</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("juegoCanvas");
+        const ctx = canvas.getContext("2d");
+        const mensajeFinalDiv = document.getElementById("mensajeFinal");
 
-    function ajustarCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    }
-    window.addEventListener("resize", ajustarCanvas);
-    ajustarCanvas();
+        // 🚨 CONFIGURACIÓN IMPORTANTE 🚨
+        // MODIFICA ESTO a la URL de tu aplicación de estudios
+        const URL_APP_ESTUDIOS = "/app/dashboard"; 
 
-    // Movimiento táctil de la pala
-    canvas.addEventListener("touchmove", (e) => {
-      const toque = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const posicionX = toque.clientX - rect.left;
-      jugador._x = Math.min(Math.max(posicionX - jugador.ancho / 2, 0), ancho() - jugador.ancho);
-    });
+        function ajustarCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener("resize", ajustarCanvas);
+        ajustarCanvas();
 
-    const ancho = () => canvas.width;
-    const alto = () => canvas.height;
+        // Movimiento táctil de la pala
+        canvas.addEventListener("touchmove", (e) => {
+            const toque = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const posicionX = toque.clientX - rect.left;
+            jugador._x = Math.min(Math.max(posicionX - jugador.ancho / 2, 0), ancho() - jugador.ancho);
+        });
 
-    let juegoActivo = true;
-    let teclasPresionadas = {};
+        const ancho = () => canvas.width;
+        const alto = () => canvas.height;
 
-    let scoreJugador = 0;
-    let scoreCPU = 0;
-    const PUNTUACION_MAXIMA = 20;
-    let proximoServidor = 1;
+        let juegoActivo = true;
+        let teclasPresionadas = {};
 
-    const PADDLE_ANCHO = 76; // reducido un 5%
-    const PADDLE_ALTO = 12;
-    const PADDLE_VELOCIDAD = 6;
+        let scoreJugador = 0;
+        let scoreCPU = 0;
+        
+        // Puntuación máxima: 10 puntos
+        const PUNTUACION_MAXIMA = 10;
+        let proximoServidor = 1;
 
-    const jugador = {
-      x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
-      y: () => alto() - PADDLE_ALTO - 10,
-      ancho: PADDLE_ANCHO,
-      alto: PADDLE_ALTO,
-      velocidad: PADDLE_VELOCIDAD,
-      color: "#00ff00"
-    };
+        const PADDLE_ANCHO = 76;
+        const PADDLE_ALTO = 12;
+        const PADDLE_VELOCIDAD = 6;
 
-    const cpu = {
-      x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
-      y: () => 10,
-      ancho: PADDLE_ANCHO,
-      alto: PADDLE_ALTO,
-      velocidad: PADDLE_VELOCIDAD * 0.8,
-      color: "#ff0000"
-    };
+        const jugador = {
+            x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
+            y: () => alto() - PADDLE_ALTO - 10,
+            ancho: PADDLE_ANCHO,
+            alto: PADDLE_ALTO,
+            velocidad: PADDLE_VELOCIDAD,
+            color: "#00ff00",
+            _x: null
+        };
 
-    const bola = {
-      radio: 8,
-      x: ancho() / 2,
-      y: alto() / 2,
-      velocidadX: 0,
-      velocidadY: 0,
-      color: "#ffffff"
-    };
+        const cpu = {
+            x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
+            y: () => 10,
+            ancho: PADDLE_ANCHO,
+            alto: PADDLE_ALTO,
+            velocidad: PADDLE_VELOCIDAD * 0.8,
+            color: "#ff0000",
+            _x: null
+        };
 
-    function resetearBola(servidor) {
-      const palaServidora = (servidor === 1) ? jugador : cpu;
-      bola.x = palaServidora.x() + palaServidora.ancho / 2;
-      bola.y = (servidor === 1)
-        ? palaServidora.y() - bola.radio
-        : palaServidora.y() + palaServidora.alto + bola.radio;
+        const bola = {
+            radio: 8,
+            x: ancho() / 2,
+            y: alto() / 2,
+            velocidadX: 0,
+            velocidadY: 0,
+            color: "#ffffff"
+        };
 
-      bola.velocidadX = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1.5 + 2);
-      bola.velocidadY = servidor * -2; // velocidad inicial lenta
-      proximoServidor = servidor;
-    }
+        function resetearBola(servidor) {
+            const palaServidora = (servidor === 1) ? jugador : cpu;
+            // Usar _x para asegurar que la bola se centra con la posición actual de la pala
+            bola.x = (palaServidora._x ?? palaServidora.x()) + palaServidora.ancho / 2;
+            bola.y = (servidor === 1)
+                ? palaServidora.y() - bola.radio
+                : palaServidora.y() + palaServidora.alto + bola.radio;
 
-    function comprobarVictoria() {
-      if (scoreJugador >= PUNTUACION_MAXIMA || scoreCPU >= PUNTUACION_MAXIMA) {
-        alert(scoreJugador >= PUNTUACION_MAXIMA
-          ? `¡Ganaste! ${scoreJugador} - ${scoreCPU}. ¡Felicidades!`
-          : `¡Perdiste! ${scoreJugador} - ${scoreCPU}. ¡La CPU ganó!`);
+            bola.velocidadX = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1.5 + 2);
+            bola.velocidadY = servidor * -2;
+            proximoServidor = servidor;
+        }
+
+        // FUNCIÓN CLAVE: Finaliza el juego y redirige
+        function finalizarJuego(haGanado) {
+            juegoActivo = false;
+            
+            // 1. Mostrar el mensaje de resultado
+            mensajeFinalDiv.style.display = 'flex';
+            mensajeFinalDiv.style.color = haGanado ? '#00ff00' : '#ff0000';
+            
+            let mensajeHTML = haGanado
+                ? `¡🎉 **HAS GANADO** 🎉!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`
+                : `¡😭 **HAS PERDIDO** 😭!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`;
+                
+            mensajeHTML += `<p>Regresando a la aplicación de estudios en 5 segundos...</p>`;
+            mensajeFinalDiv.innerHTML = mensajeHTML;
+
+            // 2. Redirigir la ventana principal (saliendo del iframe)
+            setTimeout(() => {
+                try {
+                    // Esto funciona si los dominios coinciden (misma política de origen)
+                    window.top.location.href = URL_APP_ESTUDIOS;
+                } catch (e) {
+                    console.error("Error al redirigir la ventana padre. Asegúrate de que los dominios coincidan.", e);
+                    window.location.href = URL_APP_ESTUDIOS;
+                }
+            }, 5000);
+        }
+
+        function comprobarVictoria() {
+            if (scoreJugador >= PUNTUACION_MAXIMA || scoreCPU >= PUNTUACION_MAXIMA) {
+                const haGanado = scoreJugador >= PUNTUACION_MAXIMA;
+                finalizarJuego(haGanado);
+                return true;
+            }
+            return false;
+        }
+
+        function reiniciarJuegoTotal() {
+            scoreJugador = 0;
+            scoreCPU = 0;
+            // Inicializar las posiciones de las palas
+            jugador._x = jugador.x();
+            cpu._x = cpu.x();
+            resetearBola(1);
+            juegoActivo = true;
+        }
+
+        function moverJugador() {
+            const x = teclasPresionadas['ArrowLeft'] || teclasPresionadas['a'] ? -1 :
+                      teclasPresionadas['ArrowRight'] || teclasPresionadas['d'] ? 1 : 0;
+            jugador._x = Math.min(Math.max(jugador._x + x * jugador.velocidad, 0), ancho() - jugador.ancho);
+        }
+
+        function moverCPU() {
+            const centroBola = bola.x;
+            const centroCPU = cpu._x + cpu.ancho / 2;
+            const dir = centroCPU < centroBola - 10 ? 1 : centroCPU > centroBola + 10 ? -1 : 0;
+            cpu._x = Math.min(Math.max(cpu._x + dir * cpu.velocidad, 0), ancho() - cpu.ancho);
+        }
+
+        function moverBola() {
+            bola.x += bola.velocidadX;
+            bola.y += bola.velocidadY;
+
+            // Aceleración progresiva
+            const signoY = Math.sign(bola.velocidadY);
+            const velocidadActual = Math.abs(bola.velocidadY);
+            if (velocidadActual < 8) {
+                bola.velocidadY += signoY * 0.05;
+            }
+
+            // Colisión con paredes laterales
+            if (bola.x + bola.radio > ancho() || bola.x - bola.radio < 0) {
+                bola.velocidadX *= -1;
+            }
+
+            const colision = (pala) =>
+                bola.x > pala._x && bola.x < pala._x + pala.ancho &&
+                bola.y + bola.radio > pala.y() && bola.y - bola.radio < pala.y() + pala.alto;
+
+            // Colisión Jugador
+            if (colision(jugador) && bola.velocidadY > 0) {
+                bola.velocidadY *= -1;
+                const puntoImpacto = (bola.x - (jugador._x + jugador.ancho / 2)) / (jugador.ancho / 2);
+                bola.velocidadX = puntoImpacto * 5;
+            }
+
+            // Colisión CPU
+            if (colision(cpu) && bola.velocidadY < 0) {
+                bola.velocidadY *= -1;
+                const puntoImpacto = (bola.x - (cpu._x + cpu.ancho / 2)) / (cpu.ancho / 2);
+                bola.velocidadX = puntoImpacto * 5;
+            }
+
+            // Bola fuera por arriba (Punto para Jugador)
+            if (bola.y - bola.radio < 0) {
+                scoreJugador++;
+                if (!comprobarVictoria()) resetearBola(1);
+            }
+
+            // Bola fuera por abajo (Punto para CPU)
+            if (bola.y + bola.radio > alto()) {
+                scoreCPU++;
+                if (!comprobarVictoria()) resetearBola(-1);
+            }
+        }
+
+        function dibujarPala(pala) {
+            ctx.fillStyle = pala.color;
+            ctx.fillRect(pala._x, pala.y(), pala.ancho, pala.alto);
+        }
+
+        function dibujarBola() {
+            ctx.beginPath();
+            ctx.arc(bola.x, bola.y, bola.radio, 0, Math.PI * 2);
+            ctx.fillStyle = bola.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function dibujarMarcador() {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "20px monospace";
+            ctx.fillText(scoreCPU, ancho() - 30, 40);
+            ctx.fillText(scoreJugador, ancho() - 30, alto() - 20);
+
+            ctx.fillStyle = (proximoServidor === 1) ? "#00ff00" : "#ff0000";
+            ctx.beginPath();
+            ctx.arc(ancho() - 50, proximoServidor === 1 ? alto() - 25 : 35, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(0, alto() / 2);
+            ctx.lineTo(ancho(), alto() / 2);
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function dibujar() {
+            if (!juegoActivo) return;
+            ctx.clearRect(0, 0, ancho(), alto());
+            moverJugador();
+            moverCPU();
+            moverBola();
+            dibujarMarcador();
+            dibujarPala(jugador);
+            dibujarPala(cpu);
+            dibujarBola();
+            requestAnimationFrame(dibujar);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+            teclasPresionadas[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            teclasPresionadas[e.key] = false;
+        });
+
+        const botones = document.querySelectorAll('.botonControl');
+        botones.forEach(boton => {
+            const key = boton.dataset.key;
+            boton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                teclasPresionadas[key] = true;
+                boton.classList.add('activo');
+            }, false);
+            boton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                teclasPresionadas[key] = false;
+                boton.classList.remove('activo');
+            }, false);
+        });
+
         reiniciarJuegoTotal();
-        return true;
-      }
-      return false;
-    }
-
-    function reiniciarJuegoTotal() {
-      scoreJugador = 0;
-      scoreCPU = 0;
-      resetearBola(1);
-      juegoActivo = true;
-    }
-    function moverJugador() {
-      const x = teclasPresionadas['ArrowLeft'] || teclasPresionadas['a'] ? -1 :
-                teclasPresionadas['ArrowRight'] || teclasPresionadas['d'] ? 1 : 0;
-      jugador._x = Math.min(Math.max((jugador._x ?? jugador.x()) + x * jugador.velocidad, 0), ancho() - jugador.ancho);
-    }
-
-    function moverCPU() {
-      const centroBola = bola.x;
-      const centroCPU = (cpu._x ?? cpu.x()) + cpu.ancho / 2;
-      const dir = centroCPU < centroBola - 10 ? 1 : centroCPU > centroBola + 10 ? -1 : 0;
-      cpu._x = Math.min(Math.max((cpu._x ?? cpu.x()) + dir * cpu.velocidad, 0), ancho() - cpu.ancho);
-    }
-
-    function moverBola() {
-      bola.x += bola.velocidadX;
-      bola.y += bola.velocidadY;
-
-      // Aceleración progresiva hasta velocidad máxima
-      const signoY = Math.sign(bola.velocidadY);
-      const velocidadActual = Math.abs(bola.velocidadY);
-      if (velocidadActual < 8) {
-        bola.velocidadY += signoY * 0.05;
-      }
-
-      if (bola.x + bola.radio > ancho() || bola.x - bola.radio < 0) {
-        bola.velocidadX *= -1;
-      }
-
-      const colision = (pala) =>
-        bola.x > pala._x && bola.x < pala._x + pala.ancho &&
-        bola.y + bola.radio > pala.y() && bola.y - bola.radio < pala.y() + pala.alto;
-
-      if (colision(jugador) && bola.velocidadY > 0) {
-        bola.velocidadY *= -1;
-        const puntoImpacto = (bola.x - (jugador._x + jugador.ancho / 2)) / (jugador.ancho / 2);
-        bola.velocidadX = puntoImpacto * 5;
-      }
-
-      if (colision(cpu) && bola.velocidadY < 0) {
-        bola.velocidadY *= -1;
-        const puntoImpacto = (bola.x - (cpu._x + cpu.ancho / 2)) / (cpu.ancho / 2);
-        bola.velocidadX = puntoImpacto * 5;
-      }
-
-      if (bola.y - bola.radio < 0) {
-        scoreJugador++;
-        if (!comprobarVictoria()) resetearBola(1);
-      }
-
-      if (bola.y + bola.radio > alto()) {
-        scoreCPU++;
-        if (!comprobarVictoria()) resetearBola(-1);
-      }
-    }
-
-    function dibujarPala(pala) {
-      ctx.fillStyle = pala.color;
-      ctx.fillRect(pala._x ?? pala.x(), pala.y(), pala.ancho, pala.alto);
-    }
-
-    function dibujarBola() {
-      ctx.beginPath();
-      ctx.arc(bola.x, bola.y, bola.radio, 0, Math.PI * 2);
-      ctx.fillStyle = bola.color;
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    function dibujarMarcador() {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "20px monospace";
-      ctx.fillText(scoreCPU, ancho() - 30, 40);
-      ctx.fillText(scoreJugador, ancho() - 30, alto() - 20);
-
-      ctx.fillStyle = (proximoServidor === 1) ? "#00ff00" : "#ff0000";
-      ctx.beginPath();
-      ctx.arc(ancho() - 50, proximoServidor === 1 ? alto() - 25 : 35, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.setLineDash([5, 5]);
-      ctx.moveTo(0, alto() / 2);
-      ctx.lineTo(ancho(), alto() / 2);
-      ctx.strokeStyle = "#ffffff";
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function dibujar() {
-      if (!juegoActivo) return;
-      ctx.clearRect(0, 0, ancho(), alto());
-      moverJugador();
-      moverCPU();
-      moverBola();
-      dibujarMarcador();
-      dibujarPala(jugador);
-      dibujarPala(cpu);
-      dibujarBola();
-      requestAnimationFrame(dibujar);
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (['ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
-      teclasPresionadas[e.key] = true;
-    });
-
-    document.addEventListener('keyup', (e) => {
-      teclasPresionadas[e.key] = false;
-    });
-
-    const botones = document.querySelectorAll('.botonControl');
-    botones.forEach(boton => {
-      const key = boton.dataset.key;
-      boton.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        teclasPresionadas[key] = true;
-        boton.classList.add('activo');
-      }, false);
-      boton.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        teclasPresionadas[key] = false;
-        boton.classList.remove('activo');
-      }, false);
-    });
-
-    resetearBola(1);
-    dibujar();
-  </script>
+        dibujar();
+    </script>
 </body>
 </html>
