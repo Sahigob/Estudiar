@@ -10,44 +10,38 @@
             background-color: #222;
             display: flex;
             flex-direction: column;
+            /* Usamos 100svh para que el navegador maneje mejor el espacio,
+               como en tu código funcional */
+            min-height: 100svh; 
             justify-content: center;
             align-items: center;
-            /* 💥 CAMBIO CLAVE: Reducimos la altura visible al 90% */
-            min-height: 90svh; 
             touch-action: none;
             font-family: monospace;
             color: white;
-            /* Añadimos un poco de margen inferior para separarlo de la barra */
-            margin-bottom: 20px; 
         }
 
         h1 {
             font-size: 1.2rem;
-            margin: 5px 0 10px 0; /* Margen superior reducido */
+            margin: 10px 0;
             text-align: center;
         }
 
         #contenedorJuego {
             position: relative;
             width: 100%;
-            max-width: 360px;
-            flex-grow: 1; /* Permite que ocupe el espacio disponible */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            max-width: 360px; /* Ancho máximo estándar para móviles */
         }
 
         canvas {
             width: 100%;
-            /* Mantenemos la relación de aspecto 3/5 */
-            aspect-ratio: 3 / 5; 
+            aspect-ratio: 3 / 5;
             height: auto;
             border: 5px solid #00ff00;
             background: #000;
             display: block;
         }
 
-        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN (sin cambios) */
+        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN */
         #mensajeFinal {
             position: absolute;
             top: 0;
@@ -75,7 +69,7 @@
             color: #ccc;
         }
 
-        /* Controles Táctiles (sin cambios) */
+        /* Controles Táctiles (igual que tu código base) */
         #controlesTactiles {
             display: flex;
             justify-content: center;
@@ -128,8 +122,6 @@
         <button class="botonControl movimiento" data-key="ArrowRight">DER ▶️</button>
     </div>
     <script>
-        // (El script de JavaScript se mantiene exactamente igual que en la corrección anterior,
-        // ya que la lógica de juego y redirección es correcta.)
         const canvas = document.getElementById("juegoCanvas");
         const ctx = canvas.getContext("2d");
         const mensajeFinalDiv = document.getElementById("mensajeFinal");
@@ -144,10 +136,12 @@
         window.addEventListener("resize", ajustarCanvas);
         ajustarCanvas();
 
+        // Movimiento táctil de la pala
         canvas.addEventListener("touchmove", (e) => {
             const toque = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const posicionX = toque.clientX - rect.left;
+            // Usamos operador de coalescencia nula para manejar el inicio
             jugador._x = Math.min(Math.max(posicionX - jugador.ancho / 2, 0), ancho() - jugador.ancho);
         });
 
@@ -208,27 +202,31 @@
             proximoServidor = servidor;
         }
 
+        // FUNCIÓN CLAVE: Finaliza el juego y notifica al padre
         function finalizarJuego(haGanado) {
             juegoActivo = false;
             
+            // 1. Mostrar el mensaje de resultado
             mensajeFinalDiv.style.display = 'flex';
             mensajeFinalDiv.style.color = haGanado ? '#00ff00' : '#ff0000';
             
             let mensajeHTML = haGanado
-                ? `¡🎉 **HAS GANADO** 🎉!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`
-                : `¡😭 **HAS PERDIDO** 😭!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`;
+                ? `¡🎉 HAS GANADO!! 🎉!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`
+                : `¡😭 HAS PERDIDO, ERES UN MANTA!!! 😭!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`;
                 
             mensajeHTML += `<p>Regresando a la aplicación de estudios en 2.5 segundos...</p>`;
             mensajeFinalDiv.innerHTML = mensajeHTML;
 
+            // 2. Notificar a la ventana principal para que maneje la redirección
             setTimeout(() => {
                 try {
+                    // LLAMADA CLAVE: Esto dispara la función de tu aplicación principal
                     window.parent.endGame(); 
                 } catch (e) {
                     console.error("Error: No se pudo llamar a window.parent.endGame(). Fallback a window.location.", e);
                     window.location.href = URL_APP_ESTUDIOS; 
                 }
-            }, 2500);
+            }, 2500); 
         }
 
         function comprobarVictoria() {
@@ -252,14 +250,14 @@
         function moverJugador() {
             const x = teclasPresionadas['ArrowLeft'] || teclasPresionadas['a'] ? -1 :
                       teclasPresionadas['ArrowRight'] || teclasPresionadas['d'] ? 1 : 0;
-            jugador._x = Math.min(Math.max(jugador._x + x * jugador.velocidad, 0), ancho() - jugador.ancho);
+            jugador._x = Math.min(Math.max((jugador._x ?? jugador.x()) + x * jugador.velocidad, 0), ancho() - jugador.ancho);
         }
 
         function moverCPU() {
             const centroBola = bola.x;
-            const centroCPU = cpu._x + cpu.ancho / 2;
+            const centroCPU = (cpu._x ?? cpu.x()) + cpu.ancho / 2;
             const dir = centroCPU < centroBola - 10 ? 1 : centroCPU > centroBola + 10 ? -1 : 0;
-            cpu._x = Math.min(Math.max(cpu._x + dir * cpu.velocidad, 0), ancho() - cpu.ancho);
+            cpu._x = Math.min(Math.max((cpu._x ?? cpu.x()) + dir * cpu.velocidad, 0), ancho() - cpu.ancho);
         }
 
         function moverBola() {
@@ -305,7 +303,7 @@
 
         function dibujarPala(pala) {
             ctx.fillStyle = pala.color;
-            ctx.fillRect(pala._x, pala.y(), pala.ancho, pala.alto);
+            ctx.fillRect(pala._x ?? pala.x(), pala.y(), pala.ancho, pala.alto);
         }
 
         function dibujarBola() {
