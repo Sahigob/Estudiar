@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Arkanoid Educativo</title>
 <style>
-  * { box-sizing: border-box; }
-  html, body {
+* { box-sizing: border-box; }
+html, body {
     margin: 0; padding: 0; height: 100%;
     background: #111;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* Centra horizontalmente los elementos del body */
     color: #eee;
     font-family: Arial, sans-serif;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-  }
-  #scoreboard {
+    width: 100%;
+}
+#scoreboard {
     width: 100%;
     max-width: 600px;
     display: flex;
@@ -25,11 +26,11 @@
     font-size: 1.4rem;
     padding: 10px 15px;
     box-sizing: border-box;
-  }
-  #lives {
+}
+#lives {
     color: #ff5555;
-  }
-  #completionMessage {
+}
+#completionMessage {
     margin-top: 10px;
     font-size: 1.6rem;
     font-weight: bold;
@@ -37,8 +38,8 @@
     text-align: center;
     min-height: 40px;
     user-select: text;
-  }
-  canvas {
+}
+canvas {
     background: #222;
     border: 3px solid #444;
     border-radius: 8px;
@@ -48,14 +49,15 @@
     max-height: 450px;
     width: 100%;
     display: block;
-  }
+    margin: 0 auto; /* ✅ Corrección de centrado */
+}
 </style>
 </head>
 <body>
 
 <div id="scoreboard" aria-live="polite" aria-atomic="true">
-  <div>Score: <span id="score">0</span></div>
-  <div>Lives: <span id="lives">3</span></div>
+    <div>Score: <span id="score">0</span></div>
+    <div>Lives: <span id="lives">3</span></div>
 </div>
 
 <canvas id="gameCanvas" width="600" height="420" aria-label="Área de juego Arkanoid educativo" role="img" tabindex="0"></canvas>
@@ -64,439 +66,391 @@
 
 <script>
 (() => {
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-  const WIDTH = canvas.width;
-  const HEIGHT = canvas.height;
+    // **PUNTO 1: Definición de dimensiones para el juego (basado en los atributos del canvas)**
+    const WIDTH = 600;
+    const HEIGHT = 420;
 
-  // DPI fix for sharpness on HD/mobile screens
-  function fixDPI() {
-    let dpi = window.devicePixelRatio || 1;
-    canvas.width = WIDTH * dpi;
-    canvas.height = HEIGHT * dpi;
-    canvas.style.width = WIDTH + 'px';
-    canvas.style.height = HEIGHT + 'px';
-    ctx.scale(dpi, dpi);
-  }
-  fixDPI();
-
-  // Constants for game elements
-  const PADDLE_WIDTH = 100;
-  const PADDLE_HEIGHT = 15;
-  const PADDLE_Y_OFFSET = 30;
-  const BALL_RADIUS = 8;
-
-  const BLOCK_COLS = 8;
-  const INITIAL_BLOCK_ROWS = 4;
-  const BLOCK_WIDTH = WIDTH / BLOCK_COLS - 6;
-  const BLOCK_HEIGHT = 20;
-  const BLOCK_PADDING = 6;
-  const BLOCK_OFFSET_TOP = 40;
-
-  // Blocks colors and scores
-  const BLOCK_TYPES = [
-    { color: '#e74c3c', score: 7 },  // rojo
-    { color: '#f1c40f', score: 5 },  // amarillo
-    { color: '#3498db', score: 3 },  // azul
-    { color: '#2ecc71', score: 1 }   // verde
-  ];
-
-  // UI elements
-  const scoreElem = document.getElementById('score');
-  const livesElem = document.getElementById('lives');
-  const completionMessageElem = document.getElementById('completionMessage');
-
-  // Game state variables
-  let paddleX = (WIDTH - PADDLE_WIDTH) / 2;
-  let score = 0;
-  let lives = 3;
-
-  // Ball state & velocity scaling
-  let ballX = WIDTH / 2;
-  let ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS;
-  const ballSpeedBase = 4;
-  let ballSpeedMultiplier = 1;
-  let ballDX = ballSpeedBase * (Math.random() < 0.5 ? -1 : 1);
-  let ballDY = -ballSpeedBase;
-
-  // Blocks collection
-  let blocks = [];
-
-  // Timers
-  let lastRowAddTime = 0;
-  const ROW_ADD_INTERVAL = 15000; // cada 15 seg
-  const SPEED_INCREASE_INTERVAL = 12000; // cada 12 seg sube velocidad
-  const SPEED_INCREMENT = 0.12;
-  let lastSpeedIncreaseTime = 0;
-
-  // Game end flag
-  let gameEnded = false;
-
-  // Puntaje objetivo para ganar (ejemplo para comportamiento especial)
-  // El juego termina al destruir TODOS los bloques generados, sin importar cuántas filas hayan aparecido.
-  // Por eso validamos que no quede bloque con status = 1 al actualizar puntuación.
-  // Puedes ajustar esta variable si quieres otro umbral de ganancia.
-  const TARGET_SCORE = null; // null significa que se gana cuando ya no quedan bloques activos
-
-  /**
-   * Inicializa bloques en filas y columnas
-   */
-  function initBlocks() {
-    blocks = [];
-    for (let r = 0; r < INITIAL_BLOCK_ROWS; r++) {
-      blocks[r] = [];
-      for (let c = 0; c < BLOCK_COLS; c++) {
-        const typeIdx = Math.floor(Math.random() * BLOCK_TYPES.length);
-        blocks[r][c] = {
-          x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING / 2,
-          y: r * (BLOCK_HEIGHT + BLOCK_PADDING) + BLOCK_OFFSET_TOP,
-          status: 1,
-          type: BLOCK_TYPES[typeIdx]
-        };
-      }
+    // DPI fix for sharpness on HD/mobile screens
+    function fixDPI() {
+        let dpi = window.devicePixelRatio || 1;
+        canvas.width = WIDTH * dpi;
+        canvas.height = HEIGHT * dpi;
+        canvas.style.width = WIDTH + 'px';
+        canvas.style.height = HEIGHT + 'px';
+        ctx.scale(dpi, dpi);
     }
-  }
-  initBlocks();
+    fixDPI();
 
-  /**
-   * Añade una fila nueva de bloques en la parte superior y empuja los demás abajo.
-   * Si bloque baja demasiado desencadena pérdida de vida.
-   */
-  function addBlockRow() {
-    if (gameEnded) return;
-    for (let r = blocks.length - 1; r >= 0; r--) {
-      for (let c = 0; c < BLOCK_COLS; c++) {
-        if (blocks[r][c].status &&
-          blocks[r][c].y + BLOCK_HEIGHT + (BLOCK_HEIGHT + BLOCK_PADDING) > HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS*2) {
-          // Bloque llegó demasiado abajo -> perder vida
-          loseLife();
-          return;
-        }
-        blocks[r][c].y += BLOCK_HEIGHT + BLOCK_PADDING;
-      }
-    }
-    let newRow = [];
-    for (let c = 0; c < BLOCK_COLS; c++) {
-      const typeIdx = Math.floor(Math.random() * BLOCK_TYPES.length);
-      newRow[c] = {
-        x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING / 2,
-        y: BLOCK_OFFSET_TOP,
-        status: 1,
-        type: BLOCK_TYPES[typeIdx]
-      };
-    }
-    blocks.unshift(newRow);
-  }
+    // Constants for game elements
+    const PADDLE_WIDTH = 100;
+    const PADDLE_HEIGHT = 15;
+    const PADDLE_Y_OFFSET = 30;
+    const BALL_RADIUS = 8;
 
-  /**
-   * Dibuja el paddle redondeado con gradiente y sombra
-   */
-  function drawPaddle() {
-    const grad = ctx.createLinearGradient(paddleX, HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT, paddleX + PADDLE_WIDTH, HEIGHT - PADDLE_Y_OFFSET);
-    grad.addColorStop(0, '#0ff');
-    grad.addColorStop(1, '#006');
-    ctx.beginPath();
-    ctx.roundRect(paddleX, HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, 6);
-    ctx.fillStyle = grad;
-    ctx.shadowColor = '#0ff';
-    ctx.shadowBlur = 8;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.closePath();
-  }
+    const BLOCK_COLS = 8;
+    const INITIAL_BLOCK_ROWS = 4;
+    const BLOCK_WIDTH = WIDTH / BLOCK_COLS - 6;
+    const BLOCK_HEIGHT = 20;
+    const BLOCK_PADDING = 6;
+    const BLOCK_OFFSET_TOP = 40;
 
-  /**
-   * Dibuja la bola con glow
-   */
-  function drawBall() {
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = '#0ff';
-    ctx.shadowColor = '#0ff';
-    ctx.shadowBlur = 18;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.closePath();
-  }
+    // Blocks colors and scores
+    const BLOCK_TYPES = [
+        { color: '#e74c3c', score: 7 }, 
+        { color: '#f1c40f', score: 5 }, 
+        { color: '#3498db', score: 3 }, 
+        { color: '#2ecc71', score: 1 } 
+    ];
 
-  /**
-   * Dibuja bloques con sombra y bordes sutiles
-   */
-  function drawBlocks() {
-    for (let r = 0; r < blocks.length; r++) {
-      for (let c = 0; c < blocks[r].length; c++) {
-        let b = blocks[r][c];
-        if (b.status) {
-          ctx.beginPath();
-          ctx.roundRect(b.x, b.y, BLOCK_WIDTH, BLOCK_HEIGHT, 4);
-          ctx.fillStyle = b.type.color;
-          ctx.shadowColor = b.type.color;
-          ctx.shadowBlur = 12;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-          ctx.stroke();
-          ctx.closePath();
-        }
-      }
-    }
-  }
+    // UI elements
+    const scoreElem = document.getElementById('score');
+    const livesElem = document.getElementById('lives');
+    const completionMessageElem = document.getElementById('completionMessage');
 
-  /**
-   * Limita la posición del paddle dentro del canvas
-   */
-  function constrainPaddle() {
-    if (paddleX < 0) paddleX = 0;
-    if (paddleX + PADDLE_WIDTH > WIDTH) paddleX = WIDTH - PADDLE_WIDTH;
-  }
+    // Game state variables
+    let paddleX = (WIDTH - PADDLE_WIDTH) / 2;
+    let score = 0;
+    let lives = 3; 
 
-  /**
-   * Detección de colisiones entre bola y bloques.
-   * Cuando un bloque colisiona, se elimina y se suma puntuación.
-   * También chequea condición de victoria.
-   */
-  function collisionDetection() {
-    if (gameEnded) return;
-    outer:
-    for (let r = 0; r < blocks.length; r++) {
-      for (let c = 0; c < blocks[r].length; c++) {
-        let b = blocks[r][c];
-        if (b.status) {
-          if (
-            ballX > b.x &&
-            ballX < b.x + BLOCK_WIDTH &&
-            ballY - BALL_RADIUS < b.y + BLOCK_HEIGHT &&
-            ballY + BALL_RADIUS > b.y
-          ) {
-            ballDY = -ballDY;
-            b.status = 0;
-            score += b.type.score;
-            updateScore();
+    // **PUNTO 2: Inicialización de la bola (corregido)**
+    let ballX = WIDTH / 2;
+    let ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS;
 
-            // Comprobar si ganó (no quedan bloques con status 1)
-            if (TARGET_SCORE !== null) {
-              if (score >= TARGET_SCORE) endGame(true);
-            } else {
-              if (blocks.every(row => row.every(bl => bl.status === 0))) {
-                endGame(true);
-              }
+    // Ball state & velocity scaling
+    const ballSpeedBase = 4;
+    let ballSpeedMultiplier = 1;
+    let ballDX = ballSpeedBase * (Math.random() < 0.5 ? -1 : 1);
+    let ballDY = -ballSpeedBase;
+
+    // Blocks collection
+    let blocks = [];
+
+    // Timers
+    let lastRowAddTime = 0;
+    const ROW_ADD_INTERVAL = 15000; 
+    const SPEED_INCREASE_INTERVAL = 12000; 
+    const SPEED_INCREMENT = 0.12;
+    let lastSpeedIncreaseTime = 0;
+
+    // Game end flag
+    let gameEnded = false;
+
+    const TARGET_SCORE = null;
+
+    // --- Funciones de Lógica del Juego (No cambiadas) ---
+
+    function initBlocks() {
+        blocks = [];
+        for (let r = 0; r < INITIAL_BLOCK_ROWS; r++) {
+            blocks[r] = [];
+            for (let c = 0; c < BLOCK_COLS; c++) {
+                const typeIdx = Math.floor(Math.random() * BLOCK_TYPES.length);
+                blocks[r][c] = {
+                    x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING / 2,
+                    y: r * (BLOCK_HEIGHT + BLOCK_PADDING) + BLOCK_OFFSET_TOP,
+                    status: 1,
+                    type: BLOCK_TYPES[typeIdx]
+                };
             }
-            break outer;
-          }
         }
-      }
     }
-  }
+    initBlocks();
 
-  /**
-   * Actualiza el marcador del puntaje
-   */
-  function updateScore() {
-    scoreElem.textContent = score;
-  }
-  /**
-   * Actualiza marcador de vidas
-   */
-  function updateLives() {
-    livesElem.textContent = lives;
-  }
-
-  /**
-   * Maneja pérdida de vida
-   * Si se terminan las vidas, termina el juego con derrota.
-   */
-  function loseLife() {
-    if (gameEnded) return;
-    lives--;
-    updateLives();
-    if (lives <= 0) {
-      endGame(false);
-    } else {
-      resetBallAndPaddle();
-    }
-  }
-
-  /**
-   * Resetea la posición y velocidad de bola y paddle al perder vida
-   */
-  function resetBallAndPaddle() {
-    ballX = WIDTH / 2;
-    ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS;
-    ballSpeedMultiplier = 1;
-    ballDX = ballSpeedBase * ballSpeedMultiplier * (Math.random() < 0.5 ? -1 : 1);
-    ballDY = -ballSpeedBase * ballSpeedMultiplier;
-    paddleX = (WIDTH - PADDLE_WIDTH) / 2;
-  }
-
-  /**
-   * Mueve la bola y gestiona rebotes
-   */
-  function moveBall() {
-    if (gameEnded) return;
-    ballX += ballDX;
-    ballY += ballDY;
-
-    // Rebote paredes izquierda/derecha
-    if (ballX + BALL_RADIUS > WIDTH) {
-      ballX = WIDTH - BALL_RADIUS;
-      ballDX = -ballDX;
-    }
-    if (ballX - BALL_RADIUS < 0) {
-      ballX = BALL_RADIUS;
-      ballDX = -ballDX;
-    }
-    // Rebote techo
-    if (ballY - BALL_RADIUS < 0) {
-      ballY = BALL_RADIUS;
-      ballDY = -ballDY;
-    }
-    // Rebote paddle
-    if (
-      ballY + BALL_RADIUS >= HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT &&
-      ballX > paddleX &&
-      ballX < paddleX + PADDLE_WIDTH &&
-      ballDY > 0
-    ) {
-      ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS; // evitar quedar pegado
-      ballDY = -ballDY;
-
-      // Ajustar velocidad horizontal según posición en el paddle
-      let hitPos = ballX - (paddleX + PADDLE_WIDTH / 2);
-      ballDX = hitPos * 0.18;
-
-      // Normalizar para que la velocidad total siga constante y aumente
-      const speed = Math.sqrt(ballDX*ballDX + ballDY*ballDY);
-      const targetSpeed = ballSpeedBase * ballSpeedMultiplier;
-      ballDX = (ballDX / speed) * targetSpeed;
-      ballDY = (ballDY / speed) * targetSpeed;
+    function addBlockRow() {
+        if (gameEnded) return;
+        for (let r = blocks.length - 1; r >= 0; r--) {
+            for (let c = 0; c < BLOCK_COLS; c++) {
+                if (blocks[r][c].status &&
+                    blocks[r][c].y + BLOCK_HEIGHT + (BLOCK_HEIGHT + BLOCK_PADDING) > HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS*2) {
+                    loseLife();
+                    return;
+                }
+                blocks[r][c].y += BLOCK_HEIGHT + BLOCK_PADDING;
+            }
+        }
+        let newRow = [];
+        for (let c = 0; c < BLOCK_COLS; c++) {
+            const typeIdx = Math.floor(Math.random() * BLOCK_TYPES.length);
+            newRow[c] = {
+                x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING / 2,
+                y: BLOCK_OFFSET_TOP,
+                status: 1,
+                type: BLOCK_TYPES[typeIdx]
+            };
+        }
+        blocks.unshift(newRow);
     }
 
-    // Bola se cayó = pierde vida
-    if (ballY - BALL_RADIUS > HEIGHT) {
-      loseLife();
+    function drawPaddle() {
+        const grad = ctx.createLinearGradient(paddleX, HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT, paddleX + PADDLE_WIDTH, HEIGHT - PADDLE_Y_OFFSET);
+        grad.addColorStop(0, '#0ff');
+        grad.addColorStop(1, '#006');
+        ctx.beginPath();
+        ctx.roundRect(paddleX, HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, 6);
+        ctx.fillStyle = grad;
+        ctx.shadowColor = '#0ff';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.closePath();
     }
-  }
 
-  /**
-   * Control táctil para móvil: mueve paddle con el dedo
-   */
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    if(e.touches.length > 0){
-      let touchX = e.touches[0].clientX - rect.left;
-      paddleX = touchX - PADDLE_WIDTH / 2;
-      constrainPaddle();
+    function drawBall() {
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = '#0ff';
+        ctx.shadowColor = '#0ff';
+        ctx.shadowBlur = 18;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.closePath();
     }
-  }, { passive: false });
 
-  // Soporte mouse para pruebas escritorio
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    let mouseX = e.clientX - rect.left;
-    paddleX = mouseX - PADDLE_WIDTH / 2;
-    constrainPaddle();
-  });
-
-  /**
-   * Incrementa la velocidad de la bola con el paso del tiempo
-   */
-  function increaseSpeed() {
-    if (gameEnded) return;
-    const now = Date.now();
-    if (now - lastSpeedIncreaseTime > SPEED_INCREASE_INTERVAL) {
-      ballSpeedMultiplier += SPEED_INCREMENT;
-      // Ajustar vectores de velocidad proporcionalmente
-      const speed = Math.sqrt(ballDX * ballDX + ballDY * ballDY);
-      const newSpeed = ballSpeedBase * ballSpeedMultiplier;
-      ballDX = (ballDX / speed) * newSpeed;
-      ballDY = (ballDY / speed) * newSpeed;
-      lastSpeedIncreaseTime = now;
+    function drawBlocks() {
+        for (let r = 0; r < blocks.length; r++) {
+            for (let c = 0; c < blocks[r].length; c++) {
+                let b = blocks[r][c];
+                if (b.status) {
+                    ctx.beginPath();
+                    ctx.roundRect(b.x, b.y, BLOCK_WIDTH, BLOCK_HEIGHT, 4);
+                    ctx.fillStyle = b.type.color;
+                    ctx.shadowColor = b.type.color;
+                    ctx.shadowBlur = 12;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            }
+        }
     }
-  }
 
-  /**
-   * Función encargada de gestionar el fin del juego
-   * Recibe parámetro win: true si ganó, false si perdió
-   * Muestra mensaje, espera 2.5s y notifica a la ventana padre
-   */
-  function endGame(win) {
-    if (gameEnded) return;
-    gameEnded = true;
+    function constrainPaddle() {
+        if (paddleX < 0) paddleX = 0;
+        if (paddleX + PADDLE_WIDTH > WIDTH) paddleX = WIDTH - PADDLE_WIDTH;
+    }
 
-    // Mensaje final en el DOM visible abajo del canvas
-    completionMessageElem.textContent = win ? '🎉 ¡Felicidades! Has ganado.' : '💀 Has perdido. Intenta de nuevo.';
+    function collisionDetection() {
+        if (gameEnded) return;
+        outer:
+        for (let r = 0; r < blocks.length; r++) {
+            for (let c = 0; c < blocks[r].length; c++) {
+                let b = blocks[r][c];
+                if (b.status) {
+                    if (
+                        ballX > b.x &&
+                        ballX < b.x + BLOCK_WIDTH &&
+                        ballY - BALL_RADIUS < b.y + BLOCK_HEIGHT &&
+                        ballY + BALL_RADIUS > b.y
+                    ) {
+                        ballDY = -ballDY;
+                        b.status = 0;
+                        score += b.type.score;
+                        updateScore();
 
-    // Actualizamos atributos ARIA para accesibilidad
-    completionMessageElem.setAttribute('aria-live', 'assertive');
-    completionMessageElem.setAttribute('aria-atomic', 'true');
+                        if (TARGET_SCORE !== null) {
+                            if (score >= TARGET_SCORE) endGame(true);
+                        } else {
+                            if (blocks.every(row => row.every(bl => bl.status === 0))) {
+                                endGame(true);
+                            }
+                        }
+                        break outer;
+                    }
+                }
+            }
+        }
+    }
 
-    // Intenta notificar a la ventana padre (index.html) que el juego terminó
-    // Método esperado: window.parent.endGame()
-    // Si falla (cross-origin, no existe, etc) -> redirige seguro al inicio principal
-    setTimeout(() => {
-      try {
-        if (window.parent && typeof window.parent.endGame === 'function') {
-          window.parent.endGame(win);
+    function updateScore() {
+        scoreElem.textContent = score;
+    }
+    function updateLives() {
+        livesElem.textContent = lives;
+    }
+
+    function loseLife() {
+        if (gameEnded) return;
+        lives--;
+        updateLives();
+        if (lives <= 0) {
+            endGame(false);
         } else {
-          // Fallback seguro: redirigir al inicio app principal (ajustar URL a su entorno)
-          window.location.href = '/';
+            resetBallAndPaddle();
         }
-      } catch (e) {
-        // Fallback si hay excepción
-        window.location.href = '/';
-      }
-    }, 2500); // 2.5 segundos de delay para que jugador vea resultado
-  }
-
-  /**
-   * Bucle principal del juego que actualiza y dibuja cada frame
-   */
-  function loop() {
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-    drawBlocks();
-    drawPaddle();
-    drawBall();
-
-    moveBall();
-    collisionDetection();
-
-    if (Date.now() - lastRowAddTime > ROW_ADD_INTERVAL) {
-      addBlockRow();
-      lastRowAddTime = Date.now();
     }
 
-    increaseSpeed();
-
-    if (!gameEnded) {
-      requestAnimationFrame(loop);
+    function resetBallAndPaddle() {
+        ballX = WIDTH / 2;
+        ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS;
+        ballSpeedMultiplier = 1;
+        ballDX = ballSpeedBase * ballSpeedMultiplier * (Math.random() < 0.5 ? -1 : 1);
+        ballDY = -ballSpeedBase * ballSpeedMultiplier;
+        paddleX = (WIDTH - PADDLE_WIDTH) / 2;
     }
-  }
 
-  // Polyfill roundRect para navegadores antiguos
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-      if (w < 2 * r) r = w / 2;
-      if (h < 2 * r) r = h / 2;
-      this.beginPath();
-      this.moveTo(x + r, y);
-      this.arcTo(x + w, y, x + w, y + h, r);
-      this.arcTo(x + w, y + h, x, y + h, r);
-      this.arcTo(x, y + h, x, y, r);
-      this.arcTo(x, y, x + w, y, r);
-      this.closePath();
-      return this;
+    function moveBall() {
+        if (gameEnded) return;
+        ballX += ballDX;
+        ballY += ballDY;
+
+        // Rebote paredes izquierda/derecha
+        if (ballX + BALL_RADIUS > WIDTH) {
+            ballX = WIDTH - BALL_RADIUS;
+            ballDX = -ballDX;
+        }
+        if (ballX - BALL_RADIUS < 0) {
+            ballX = BALL_RADIUS;
+            ballDX = -ballDX;
+        }
+        // Rebote techo
+        if (ballY - BALL_RADIUS < 0) {
+            ballY = BALL_RADIUS;
+            ballDY = -ballDY;
+        }
+        // Rebote paddle
+        if (
+            ballY + BALL_RADIUS >= HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT &&
+            ballX > paddleX &&
+            ballX < paddleX + PADDLE_WIDTH &&
+            ballDY > 0
+        ) {
+            ballY = HEIGHT - PADDLE_Y_OFFSET - PADDLE_HEIGHT - BALL_RADIUS;
+            ballDY = -ballDY;
+
+            // Ajustar velocidad horizontal según posición en el paddle
+            let hitPos = ballX - (paddleX + PADDLE_WIDTH / 2);
+            ballDX = hitPos * 0.18;
+
+            // Normalizar para que la velocidad total siga constante y aumente
+            const speed = Math.sqrt(ballDX*ballDX + ballDY*ballDY);
+            const targetSpeed = ballSpeedBase * ballSpeedMultiplier;
+            ballDX = (ballDX / speed) * targetSpeed;
+            ballDY = (ballDY / speed) * targetSpeed;
+        }
+
+        // Bola se cayó = pierde vida
+        if (ballY - BALL_RADIUS > HEIGHT) {
+            loseLife();
+        }
     }
-  }
 
-  // Iniciar valores visuales y empezar el loop
-  updateScore();
-  updateLives();
-  lastRowAddTime = Date.now();
-  lastSpeedIncreaseTime = Date.now();
-  loop();
+    // Control táctil para móvil
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        if(e.touches.length > 0){
+            let touchX = e.touches[0].clientX - rect.left;
+            // Adaptar coordenada táctil a escala lógica del juego
+            let gameX = touchX * (WIDTH / rect.width);
+            paddleX = gameX - PADDLE_WIDTH / 2;
+            constrainPaddle();
+        }
+    }, { passive: false });
+
+    // Soporte mouse para pruebas escritorio
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        let mouseX = e.clientX - rect.left;
+        // Adaptar coordenada de ratón a escala lógica del juego
+        let gameX = mouseX * (WIDTH / rect.width);
+        paddleX = gameX - PADDLE_WIDTH / 2;
+        constrainPaddle();
+    });
+
+    function increaseSpeed() {
+        if (gameEnded) return;
+        const now = Date.now();
+        if (now - lastSpeedIncreaseTime > SPEED_INCREASE_INTERVAL) {
+            ballSpeedMultiplier += SPEED_INCREMENT;
+            // Ajustar vectores de velocidad proporcionalmente
+            const speed = Math.sqrt(ballDX * ballDX + ballDY * ballDY);
+            const newSpeed = ballSpeedBase * ballSpeedMultiplier;
+            ballDX = (ballDX / speed) * newSpeed;
+            ballDY = (ballDY / speed) * newSpeed;
+            lastSpeedIncreaseTime = now;
+        }
+    }
+
+    /**
+     * Función encargada de gestionar el fin del juego y el retorno.
+     */
+    function endGame(win) {
+        if (gameEnded) return;
+        gameEnded = true;
+
+        completionMessageElem.textContent = win ? '🎉 ¡Felicidades! Has ganado.' : '💀 Has perdido. Intenta de nuevo.';
+
+        setTimeout(() => {
+            try {
+                // 1. Intenta llamar a la función en la ventana padre (si existe)
+                if (window.parent && window.parent !== window && typeof window.parent.endGame === 'function') {
+                    window.parent.endGame(win);
+                } else {
+                    // 2. Fallback seguro: Redirige la ventana actual (el iframe)
+                    window.location.href = '/'; 
+                }
+            } catch (e) {
+                // 3. Fallback si hay excepción (ej. error de origen cruzado)
+                window.location.href = '/';
+            }
+        }, 2500); 
+    }
+
+    /**
+     * Bucle principal del juego que actualiza y dibuja cada frame
+     */
+    function loop() {
+        // Usar ctx.fillRect para dibujar el fondo evita parpadeos vs. ctx.clearRect
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        drawBlocks();
+        drawPaddle();
+        drawBall();
+
+        moveBall();
+        collisionDetection();
+
+        if (Date.now() - lastRowAddTime > ROW_ADD_INTERVAL) {
+            addBlockRow();
+            lastRowAddTime = Date.now();
+        }
+
+        increaseSpeed();
+
+        if (!gameEnded) {
+            requestAnimationFrame(loop);
+        }
+    }
+
+    // Polyfill roundRect (Necesario si no todos los navegadores lo soportan)
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.beginPath();
+            this.moveTo(x + r, y);
+            this.arcTo(x + w, y, x + w, y + h, r);
+            this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r);
+            this.arcTo(x, y, x + w, y, r);
+            this.closePath();
+            return this;
+        }
+    }
+
+    // Inicializar y empezar
+    updateScore();
+    updateLives();
+    lastRowAddTime = Date.now();
+    lastSpeedIncreaseTime = Date.now();
+    // No necesitamos llamar a resetBallAndPaddle() aquí porque la bola ya está inicializada.
+    loop();
 
 })();
 </script>
