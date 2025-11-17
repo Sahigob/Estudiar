@@ -1,378 +1,270 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Clásico Pong - Recompensa de Estudios</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-        body {
-            margin: 0;
-            background-color: #222;
-            display: flex;
-            flex-direction: column;
-            /* Usamos 100svh para que el navegador maneje mejor el espacio,
-               como en tu código funcional */
-            min-height: 100svh; 
-            justify-content: center;
-            align-items: center;
-            touch-action: none;
-            font-family: monospace;
-            color: white;
-        }
-
-        h1 {
-            font-size: 1.2rem;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        #contenedorJuego {
-            position: relative;
-            width: 100%;
-            max-width: 360px; /* Ancho máximo estándar para móviles */
-        }
-
-        canvas {
-            width: 100%;
-            aspect-ratio: 3 / 5;
-            height: auto;
-            border: 5px solid #00ff00;
-            background: #000;
-            display: block;
-        }
-
-        /* ESTILO PARA EL MENSAJE DE FINALIZACIÓN */
-        #mensajeFinal {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 100;
-            display: none; 
-        }
-        
-        #mensajeFinal p {
-            margin-top: 15px;
-            font-size: 0.9rem;
-            font-weight: normal;
-            color: #ccc;
-        }
-
-        /* Controles Táctiles (igual que tu código base) */
-        #controlesTactiles {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            max-width: 360px;
-            margin-top: 10px;
-            padding: 0 10px;
-            box-sizing: border-box;
-        }
-
-        .botonControl {
-            padding: 12px 8px;
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            user-select: none;
-            flex-grow: 1;
-            margin: 0 5px;
-            opacity: 0.9;
-        }
-
-        .botonControl.movimiento {
-            background-color: #3498DB;
-        }
-
-        .botonControl:active, .botonControl.activo {
-            opacity: 1.0;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        @media (min-width: 600px) {
-            #controlesTactiles {
-                display: none;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Pong 1 Jugador</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  html, body {
+    height: 100%;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #scoreboard {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    max-width: 600px;
+    color: #0ff;
+    font-size: 20px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 10;
+  }
+  #pongCanvas {
+    background: #000;
+    border: 3px solid #0ff;
+    border-radius: 10px;
+    touch-action: none;
+    width: 90vw;
+    max-width: 600px;
+    aspect-ratio: 3 / 2;
+    display: block;
+  }
+</style>
 </head>
 <body>
-    <h1>Pong: Recompensa (A 10 Puntos)</h1>
-    <div id="contenedorJuego">
-        <canvas id="juegoCanvas"></canvas>
-        <div id="mensajeFinal"></div>
-    </div>
-    <div id="controlesTactiles">
-        <button class="botonControl movimiento" data-key="ArrowLeft">◀️ IZQ</button>
-        <button class="botonControl movimiento" data-key="ArrowRight">DER ▶️</button>
-    </div>
-    <script>
-        const canvas = document.getElementById("juegoCanvas");
-        const ctx = canvas.getContext("2d");
-        const mensajeFinalDiv = document.getElementById("mensajeFinal");
 
-        const URL_APP_ESTUDIOS = "/app/dashboard"; 
+<div id="scoreboard">
+  <div>Máquina: <span id="scoreTop">0</span></div>
+  <div>Jugador: <span id="scoreBottom">0</span></div>
+</div>
 
-        function ajustarCanvas() {
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+<canvas id="pongCanvas" width="600" height="400"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById('pongCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreTopElem = document.getElementById('scoreTop');
+  const scoreBottomElem = document.getElementById('scoreBottom');
+
+  const WIDTH = canvas.width;
+  const HEIGHT = canvas.height;
+
+  const PADDLE_WIDTH = 120;
+  const PADDLE_HEIGHT = 15;
+  const BALL_RADIUS = 8;
+
+  const WIN_SCORE = 10;
+
+  let paddleTopX = (WIDTH - PADDLE_WIDTH) / 2;
+  let paddleBottomX = (WIDTH - PADDLE_WIDTH) / 2;
+
+  let ballX = WIDTH / 2;
+  let ballY = HEIGHT / 2;
+  let ballSpeedX = 3 * (Math.random() < 0.5 ? -1 : 1);
+  let ballSpeedY = 5 * (Math.random() < 0.5 ? -1 : 1);
+
+  let scoreTop = 0;
+  let scoreBottom = 0;
+
+  let gameOver = false;
+
+  const AI_SPEED = 4;
+
+  // ------------------------------------------------------------------
+  // FUNCIÓN CORREGIDA para llamar directamente a la función del padre
+  // ------------------------------------------------------------------
+  function notifyParent(playerWon) {
+    // Parámetro playerWon es true si ganó el jugador, false si ganó la máquina.
+    setTimeout(() => {
+      try {
+        if(window.parent && window.parent !== window && typeof window.parent.endGame === 'function'){
+          // Llama a la función del padre (endGame) con el resultado booleano.
+          window.parent.endGame(playerWon);
+        } else {
+          // Fallback de redirección si no puede acceder al padre
+          window.location.href = '/'; 
         }
-        window.addEventListener("resize", ajustarCanvas);
-        ajustarCanvas();
+      } catch(e) {
+        // Fallback de redirección si la Política de Mismo Origen lo bloquea
+        window.location.href = '/';
+      }
+    }, 2500);
+  }
+  // ------------------------------------------------------------------
 
-        // Movimiento táctil de la pala
-        canvas.addEventListener("touchmove", (e) => {
-            const toque = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const posicionX = toque.clientX - rect.left;
-            // Usamos operador de coalescencia nula para manejar el inicio
-            jugador._x = Math.min(Math.max(posicionX - jugador.ancho / 2, 0), ancho() - jugador.ancho);
-        });
 
-        const ancho = () => canvas.width;
-        const alto = () => canvas.height;
+  function fixDPI() {
+    const dpi = window.devicePixelRatio || 1;
+    if(canvas.width !== WIDTH * dpi || canvas.height !== HEIGHT * dpi){
+      canvas.width = WIDTH * dpi;
+      canvas.height = HEIGHT * dpi;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpi, dpi);
+    }
+  }
+  fixDPI();
 
-        let juegoActivo = true;
-        let teclasPresionadas = {};
+  function drawPaddle(x, y) {
+    ctx.fillStyle = '#0ff';
+    ctx.shadowColor = '#0ff';
+    ctx.shadowBlur = 8;
+    ctx.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    ctx.shadowBlur = 0;
+  }
 
-        let scoreJugador = 0;
-        let scoreCPU = 0;
-        
-        const PUNTUACION_MAXIMA = 10;
-        let proximoServidor = 1;
+  function drawBall() {
+    ctx.beginPath();
+    ctx.fillStyle = '#0ff';
+    ctx.shadowColor = '#0ff';
+    ctx.shadowBlur = 15;
+    ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
 
-        const PADDLE_ANCHO = 76;
-        const PADDLE_ALTO = 12;
-        const PADDLE_VELOCIDAD = 6;
+  function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    drawPaddle(paddleTopX, 0);
+    drawPaddle(paddleBottomX, HEIGHT - PADDLE_HEIGHT);
+    drawBall();
+  }
 
-        const jugador = {
-            x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
-            y: () => alto() - PADDLE_ALTO - 10,
-            ancho: PADDLE_ANCHO,
-            alto: PADDLE_ALTO,
-            velocidad: PADDLE_VELOCIDAD,
-            color: "#00ff00",
-            _x: null
-        };
+  function limitSpeed() {
+    const maxX = 9;
+    if (ballSpeedX > maxX) ballSpeedX = maxX;
+    if (ballSpeedX < -maxX) ballSpeedX = -maxX;
+  }
 
-        const cpu = {
-            x: () => (ancho() / 2) - (PADDLE_ANCHO / 2),
-            y: () => 10,
-            ancho: PADDLE_ANCHO,
-            alto: PADDLE_ALTO,
-            velocidad: PADDLE_VELOCIDAD * 0.8,
-            color: "#ff0000",
-            _x: null
-        };
+  function updateBall() {
+    if (gameOver) return;
 
-        const bola = {
-            radio: 8,
-            x: ancho() / 2,
-            y: alto() / 2,
-            velocidadX: 0,
-            velocidadY: 0,
-            color: "#ffffff"
-        };
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
 
-        function resetearBola(servidor) {
-            const palaServidora = (servidor === 1) ? jugador : cpu;
-            bola.x = (palaServidora._x ?? palaServidora.x()) + palaServidora.ancho / 2;
-            bola.y = (servidor === 1)
-                ? palaServidora.y() - bola.radio
-                : palaServidora.y() + palaServidora.alto + bola.radio;
+    // Laterales
+    if (ballX - BALL_RADIUS <= 0) {
+      ballX = BALL_RADIUS;
+      ballSpeedX *= -1;
+    }
+    if (ballX + BALL_RADIUS >= WIDTH) {
+      ballX = WIDTH - BALL_RADIUS;
+      ballSpeedX *= -1;
+    }
 
-            bola.velocidadX = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1.5 + 2);
-            bola.velocidadY = servidor * -2;
-            proximoServidor = servidor;
-        }
+    // Paleta IA (Superior)
+    if (ballY - BALL_RADIUS <= PADDLE_HEIGHT) {
+      if (ballX >= paddleTopX && ballX <= paddleTopX + PADDLE_WIDTH) {
+        ballY = PADDLE_HEIGHT + BALL_RADIUS;
+        ballSpeedY *= -1;
 
-        // FUNCIÓN CLAVE: Finaliza el juego y notifica al padre
-        function finalizarJuego(haGanado) {
-            juegoActivo = false;
-            
-            // 1. Mostrar el mensaje de resultado
-            mensajeFinalDiv.style.display = 'flex';
-            mensajeFinalDiv.style.color = haGanado ? '#00ff00' : '#ff0000';
-            
-            let mensajeHTML = haGanado
-                ? `¡🎉 HAS GANADO!! 🎉!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`
-                : `¡😭 HAS PERDIDO, ERES UN MANTA!!! 😭!<br>Puntuación Final: ${scoreJugador} - ${scoreCPU}`;
-                
-            mensajeHTML += `<p>Regresando a la aplicación de estudios en 2.5 segundos...</p>`;
-            mensajeFinalDiv.innerHTML = mensajeHTML;
+        let hitPos = ballX - (paddleTopX + PADDLE_WIDTH / 2);
+        ballSpeedX = hitPos * 0.09;
+        limitSpeed();
+      } else {
+        scoreBottom++;
+        updateScores();
+        checkWin();
+        resetBall(true);
+      }
+    }
 
-            // 2. Notificar a la ventana principal para que maneje la redirección
-            setTimeout(() => {
-                try {
-                    // LLAMADA CLAVE: Esto dispara la función de tu aplicación principal
-                    window.parent.endGame(); 
-                } catch (e) {
-                    console.error("Error: No se pudo llamar a window.parent.endGame(). Fallback a window.location.", e);
-                    window.location.href = URL_APP_ESTUDIOS; 
-                }
-            }, 2500); 
-        }
+    // Paleta jugador (Inferior)
+    if (ballY + BALL_RADIUS >= HEIGHT - PADDLE_HEIGHT) {
+      if (ballX >= paddleBottomX && ballX <= paddleBottomX + PADDLE_WIDTH) {
+        ballY = HEIGHT - PADDLE_HEIGHT - BALL_RADIUS;
+        ballSpeedY *= -1;
 
-        function comprobarVictoria() {
-            if (scoreJugador >= PUNTUACION_MAXIMA || scoreCPU >= PUNTUACION_MAXIMA) {
-                const haGanado = scoreJugador >= PUNTUACION_MAXIMA;
-                finalizarJuego(haGanado);
-                return true;
-            }
-            return false;
-        }
+        let hitPos = ballX - (paddleBottomX + PADDLE_WIDTH / 2);
+        ballSpeedX = hitPos * 0.09;
+        limitSpeed();
+      } else {
+        scoreTop++;
+        updateScores();
+        checkWin();
+        resetBall(false);
+      }
+    }
+  }
 
-        function reiniciarJuegoTotal() {
-            scoreJugador = 0;
-            scoreCPU = 0;
-            jugador._x = jugador.x();
-            cpu._x = cpu.x();
-            resetearBola(1);
-            juegoActivo = true;
-        }
+  function updateScores() {
+    scoreTopElem.textContent = scoreTop;
+    scoreBottomElem.textContent = scoreBottom;
+  }
 
-        function moverJugador() {
-            const x = teclasPresionadas['ArrowLeft'] || teclasPresionadas['a'] ? -1 :
-                      teclasPresionadas['ArrowRight'] || teclasPresionadas['d'] ? 1 : 0;
-            jugador._x = Math.min(Math.max((jugador._x ?? jugador.x()) + x * jugador.velocidad, 0), ancho() - jugador.ancho);
-        }
+  // Función checkWin llama a notifyParent con el booleano
+  function checkWin() {
+    if (scoreTop >= WIN_SCORE || scoreBottom >= WIN_SCORE) {
+      gameOver = true;
+      ballSpeedX = 0;
+      ballSpeedY = 0;
+      
+      const playerWon = scoreBottom >= WIN_SCORE;
+      
+      alert(playerWon ? "¡Ganas tú!" : "¡Gana la Máquina!");
+      notifyParent(playerWon); // Envía true si gana jugador, false si gana máquina
+    }
+  }
 
-        function moverCPU() {
-            const centroBola = bola.x;
-            const centroCPU = (cpu._x ?? cpu.x()) + cpu.ancho / 2;
-            const dir = centroCPU < centroBola - 10 ? 1 : centroCPU > centroBola + 10 ? -1 : 0;
-            cpu._x = Math.min(Math.max((cpu._x ?? cpu.x()) + dir * cpu.velocidad, 0), ancho() - cpu.ancho);
-        }
+  function resetBall(topStarts) {
+    if (gameOver) return;
 
-        function moverBola() {
-            bola.x += bola.velocidadX;
-            bola.y += bola.velocidadY;
+    ballX = WIDTH / 2;
+    ballY = HEIGHT / 2;
+    ballSpeedX = 5 * (Math.random() < 0.5 ? -1 : 1);
+    ballSpeedY = topStarts ? 8 : -8;
+  }
 
-            const signoY = Math.sign(bola.velocidadY);
-            const velocidadActual = Math.abs(bola.velocidadY);
-            if (velocidadActual < 8) {
-                bola.velocidadY += signoY * 0.05;
-            }
+  function updateAI() {
+    if (gameOver) return;
 
-            if (bola.x + bola.radio > ancho() || bola.x - bola.radio < 0) {
-                bola.velocidadX *= -1;
-            }
+    let target = ballX - PADDLE_WIDTH / 2;
+    if (paddleTopX < target) paddleTopX += AI_SPEED;
+    if (paddleTopX > target) paddleTopX -= AI_SPEED;
 
-            const colision = (pala) =>
-                bola.x > pala._x && bola.x < pala._x + pala.ancho &&
-                bola.y + bola.radio > pala.y() && bola.y - bola.radio < pala.y() + pala.alto;
+    paddleTopX = Math.max(0, Math.min(WIDTH - PADDLE_WIDTH, paddleTopX));
+  }
 
-            if (colision(jugador) && bola.velocidadY > 0) {
-                bola.velocidadY *= -1;
-                const puntoImpacto = (bola.x - (jugador._x + jugador.ancho / 2)) / (jugador.ancho / 2);
-                bola.velocidadX = puntoImpacto * 5;
-            }
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    paddleBottomX = x - PADDLE_WIDTH / 2;
+    paddleBottomX = Math.max(0, Math.min(WIDTH - PADDLE_WIDTH, paddleBottomX));
+  }, { passive: false });
 
-            if (colision(cpu) && bola.velocidadY < 0) {
-                bola.velocidadY *= -1;
-                const puntoImpacto = (bola.x - (cpu._x + cpu.ancho / 2)) / (cpu.ancho / 2);
-                bola.velocidadX = puntoImpacto * 5;
-            }
+  canvas.addEventListener('mousemove', e => {
+    if (gameOver) return;
+    if(e.buttons !== 1) return;
+    const rect = canvas.getBoundingClientRect();
+    paddleBottomX = e.clientX - rect.left - PADDLE_WIDTH / 2;
+    paddleBottomX = Math.max(0, Math.min(WIDTH - PADDLE_WIDTH, paddleBottomX));
+  });
 
-            if (bola.y - bola.radio < 0) {
-                scoreJugador++;
-                if (!comprobarVictoria()) resetearBola(1);
-            }
+  function loop() {
+    updateAI();
+    updateBall();
+    draw();
+    requestAnimationFrame(loop);
+  }
 
-            if (bola.y + bola.radio > alto()) {
-                scoreCPU++;
-                if (!comprobarVictoria()) resetearBola(-1);
-            }
-        }
+  loop();
+})();
+</script>
 
-        function dibujarPala(pala) {
-            ctx.fillStyle = pala.color;
-            ctx.fillRect(pala._x ?? pala.x(), pala.y(), pala.ancho, pala.alto);
-        }
-
-        function dibujarBola() {
-            ctx.beginPath();
-            ctx.arc(bola.x, bola.y, bola.radio, 0, Math.PI * 2);
-            ctx.fillStyle = bola.color;
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function dibujarMarcador() {
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "20px monospace";
-            ctx.fillText(scoreCPU, ancho() - 30, 40);
-            ctx.fillText(scoreJugador, ancho() - 30, alto() - 20);
-
-            ctx.fillStyle = (proximoServidor === 1) ? "#00ff00" : "#ff0000";
-            ctx.beginPath();
-            ctx.arc(ancho() - 50, proximoServidor === 1 ? alto() - 25 : 35, 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.setLineDash([5, 5]);
-            ctx.moveTo(0, alto() / 2);
-            ctx.lineTo(ancho(), alto() / 2);
-            ctx.strokeStyle = "#ffffff";
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        function dibujar() {
-            if (!juegoActivo) return;
-            ctx.clearRect(0, 0, ancho(), alto());
-            moverJugador();
-            moverCPU();
-            moverBola();
-            dibujarMarcador();
-            dibujarPala(jugador);
-            dibujarPala(cpu);
-            dibujarBola();
-            requestAnimationFrame(dibujar);
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (['ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
-            teclasPresionadas[e.key] = true;
-        });
-
-        document.addEventListener('keyup', (e) => {
-            teclasPresionadas[e.key] = false;
-        });
-
-        const botones = document.querySelectorAll('.botonControl');
-        botones.forEach(boton => {
-            const key = boton.dataset.key;
-            boton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                teclasPresionadas[key] = true;
-                boton.classList.add('activo');
-            }, false);
-            boton.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                teclasPresionadas[key] = false;
-                boton.classList.remove('activo');
-            }, false);
-        });
-
-        reiniciarJuegoTotal();
-        dibujar();
-    </script>
 </body>
 </html>
