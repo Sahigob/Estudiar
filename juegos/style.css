@@ -1,92 +1,223 @@
-:root{
-  --bg1:#071029;
-  --panel:#0f2b3a;
-  --accent:#00dd99;
-  --pixel-border:#0b1c25;
+:root {
+  --bg-dark: #071029;
+  --panel-bg: #0f2b3a;
+  --accent-green: #00dd99;
+  --text-shadow: 2px 2px 0 #000;
 }
 
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:linear-gradient(180deg,#071029 0%, #0b3150 100%);font-family:monospace}
+* {
+  box-sizing: border-box;
+  user-select: none; /* Evita seleccionar texto al tocar rápido */
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent; /* Quita el flash azul en botones móviles */
+}
 
-#game-container{
-  width:100%;
-  max-width:900px;
-  aspect-ratio:4/3;
-  margin:18px auto;
-  position:relative;
-  border-radius:8px;
-  box-shadow:0 12px 30px rgba(0,0,0,0.6);
-  overflow:hidden;
-  background:var(--panel);
-  /* ➡️ CORRECCIÓN CLAVE: Bloquear cualquier zoom o scroll en el área de juego */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #071029 0%, #0b3150 100%);
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden; /* Evita scroll en la página entera */
+}
+
+/* --- Contenedor Principal del Juego --- */
+#game-container {
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 4/3; /* Mantiene la proporción cuadrada/retro */
+  margin: 0 auto;
+  position: relative; /* CRÍTICO: Para que el HUD y Overlay se posicionen dentro */
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+  background: var(--panel-bg);
+  
+  /* CRÍTICO: Bloquea gestos del navegador (zoom, swipe) dentro del área de juego */
   touch-action: none; 
 }
 
-#gameCanvas{
-  width:100%;
-  height:100%;
-  display:block;
-  image-rendering: pixelated;
-  background:linear-gradient(180deg,#1b6b5a,#125a47);
+/* Centrado vertical ligero en pantallas grandes */
+@media (min-height: 700px) {
+  #game-container {
+    margin-top: 20px;
+  }
 }
 
-/* HUD */
-#hud{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:16px}
-#hud div{background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:6px;color:#fff;border:2px solid rgba(255,255,255,0.04);font-weight:700}
-#hud span{color:var(--accent)}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated; /* Mantiene los píxeles nítidos */
+  background: #000;
+  border-radius: 8px;
+}
 
-/* Controles móviles */
-#controls-container{
+/* --- HUD (Marcadores Puntuación/Vidas) --- */
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 100%;
+  padding: 0 16px;
+  display: flex;
+  justify-content: space-between; /* Puntos a la izq, Vidas a la der */
+  z-index: 50; /* CRÍTICO: Debe ser alto para verse encima del juego */
+  pointer-events: none; /* Permite hacer clic en el juego a través del texto */
+}
+
+#hud div {
+  background: rgba(0, 0, 0, 0.6); /* Fondo semitransparente para leer bien */
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  font-weight: bold;
+  font-size: 16px;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 0 #000;
+}
+
+#hud span {
+  color: var(--accent-green);
+  margin-left: 5px;
+  font-size: 18px;
+}
+
+/* --- Overlay (Game Over) --- */
+#overlay {
+  position: absolute;
+  inset: 0; /* Ocupa todo el contenedor padre */
+  background: rgba(2, 6, 14, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60; /* Encima del HUD */
+  backdrop-filter: blur(2px);
+  border-radius: 8px;
+}
+
+#overlay.hidden {
+  display: none;
+}
+
+#overlay-box {
+  background: #071422;
+  border: 4px solid var(--accent-green);
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+  min-width: 260px;
+  box-shadow: 0 0 20px rgba(0, 221, 153, 0.2);
+}
+
+#overlay-title {
+  margin: 0 0 10px;
+  font-size: 32px;
+  color: #ff5555; /* Rojo para Game Over */
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 #000;
+}
+
+#overlay p {
+  margin: 10px 0 20px;
+  font-size: 18px;
+}
+
+#btn-restart {
+  background: var(--accent-green);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 #008f63;
+  transition: transform 0.1s;
+}
+
+#btn-restart:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #008f63;
+}
+
+/* --- Controles Táctiles --- */
+#controls-container {
   position: fixed;
-  bottom: 12px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  z-index: 100;
+  gap: 8px;
+  z-index: 100; /* Encima de todo */
 }
 
-#controls-container .middle-row{
-  display:flex;
-  gap:6px;
+.middle-row {
+  display: flex;
+  gap: 8px;
 }
 
-#controls-container button{
-  width: 70px;
-  height: 70px;
+#controls-container button {
+  width: 65px;
+  height: 65px;
   font-size: 28px;
-  font-weight: bold;
-  border:none;
-  border-radius:8px;
-  background: var(--accent);
-  color: #000;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.4);
   cursor: pointer;
-  user-select: none;
-  /* ➡️ CORRECCIÓN CLAVE: Bloquear el doble toque (zoom) en los botones */
-  touch-action: manipulation; 
-}
-#controls-container button:active{
-  transform: translateY(2px);
+  touch-action: manipulation; /* Evita delay en click */
 }
 
-/* Overlay */
-#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,14,0.6);z-index:40}
-#overlay.hidden{display:none}
-#overlay-box{background:#071422;border:6px solid #0f4251;padding:20px;border-radius:10px;text-align:center;color:#fff;min-width:260px}
-#overlay-box h1{margin:0 0 6px;font-size:28px;color:#ffd86b;letter-spacing:1.5px}
-#overlay-box p{margin:6px 0 12px}
-#btn-restart{background:var(--accent);border:none;padding:10px 14px;border-radius:6px;font-weight:bold;cursor:pointer}
-#btn-restart:active{transform:translateY(1px)}
+#controls-container button:active {
+  background: var(--accent-green);
+  color: #000;
+  transform: translateY(4px);
+  box-shadow: none;
+}
 
-/* Responsivo */
-@media(max-width:500px){
-  #controls-container button{
-    width:60px;
-    height:60px; 
-    font-size:22px; 
+/* --- Ajustes Responsivos (Móvil) --- */
+@media (max-width: 600px) {
+  #game-container {
+    width: 100%;
+    margin: 0;
+    border-radius: 0; 
   }
-  #controls-container .middle-row{gap:4px}
-  #game-container{max-width:100%;margin:8px}
+  
+  #hud {
+    top: 8px;
+    padding: 0 10px;
+  }
+  
+  #hud div {
+    font-size: 14px;
+    padding: 4px 8px;
+  }
+
+  #controls-container {
+    bottom: 15px;
+  }
+  
+  #controls-container button {
+    width: 58px;
+    height: 58px;
+    font-size: 24px;
+    border-radius: 10px;
+  }
+}
+
+/* Pantallas muy pequeñas (iPhone SE, etc) */
+@media (max-height: 600px) {
+  #controls-container button {
+     width: 45px;
+     height: 45px;
+     font-size: 18px;
+  }
+  .middle-row { gap: 4px; }
+  #hud { top: 5px; }
 }
